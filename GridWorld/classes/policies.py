@@ -76,7 +76,7 @@ class DQN_agent():
         self.replay_buffer = ReplayBuffer(batch_size=batch_size, state_dim=self.DQN.input_dim)
     def eps_greedy_policy(self,state):
         q_values = self.DQN.forward(state)
-        if np.random.random() < eps:
+        if np.random.random() < self.eps:
             action = env.action_space.sample()
         else:
             action = int(torch.argmax(q_values))
@@ -162,7 +162,7 @@ if __name__  ==  "__main__":
     # n_hidden = 20
     n_state = env.observation_space.shape[0]
     n_action = env.action_space.n
-    lr = 0.001
+    lr = 0.0001
     eps = 1
     gamma = 0.99
     batch_size = 64
