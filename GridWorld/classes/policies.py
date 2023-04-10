@@ -30,7 +30,7 @@ class ANN_simple(torch.nn.Module):
         return self.model(torch.Tensor(x))
 
 class ReplayBuffer():
-    def __init__(self,capacity:int=300000, state_dim:int=4,batch_size:int=64):
+    def __init__(self,capacity:int=100000, state_dim:int=4,batch_size:int=64):
         self.capacity = capacity
         self.event_idx = 0
         self.event_tuples = torch.zeros((2*state_dim+3,capacity))
@@ -39,6 +39,8 @@ class ReplayBuffer():
     def save_event(self,state,action,reward,next_state,terminated):
         self.event_tuples[:,self.event_idx%self.capacity] = torch.from_numpy(np.hstack((state,action,reward,next_state,terminated)))
         self.event_idx += 1
+        if self.event_idx % 100000 ==0:
+            print("starting new buffer")
 
     def get_batch_of_events(self):
         if self.event_idx >= self.batch_size:
@@ -55,12 +57,12 @@ class DQNetwork(torch.nn.Module):
                                         torch.nn.Linear(self.input_dim,64),
                                         torch.nn.ReLU(),
                                         # torch.nn.Dropout(0.1),
-                                        torch.nn.Linear(64, 32),
+                                        torch.nn.Linear(64, 64),
                                         torch.nn.ReLU(),
                                         # torch.nn.Dropout(0.1),
-                                        torch.nn.Linear(32, 32),
-                                        torch.nn.ReLU(),
-                                        torch.nn.Linear(32,self.output_dim),
+                                        # torch.nn.Linear(32, 32),
+                                        # torch.nn.ReLU(),
+                                        torch.nn.Linear(64,self.output_dim),
                                         # torch.nn.Softmax()
         )
 
@@ -144,14 +146,14 @@ class DQN_agent():
                 # self.DQN.scheduler.step()
                 if self.target_DQN:
                     self.target_DQN = copy.deepcopy(self.DQN)
-                    print("copied weights")
+                    print("copied weights. Loss:",loss)
                     # self.target_DQN.load_state_dict(self.DQN.state_dict())
 
 
 
     def learn_policy(self,n_frames:int=10000,eval_mode:bool=False):
-        reward_in_episodes = np.zeros(40000, dtype=float)
-        frames_in_episodes = np.zeros(40000,dtype=int)
+        reward_in_episodes = np.zeros(10000, dtype=float)
+        frames_in_episodes = np.zeros(10000,dtype=int)
         episodes = 0
         cur_epi_frame_counter = 0
         cur_epi_reward = 0
@@ -164,7 +166,7 @@ class DQN_agent():
 # Algorithmic steps
 #for each episode
         for frame_count in tqdm(range(n_frames),desc=f"Frames (training :{not eval_mode}):"):
-            if frame_count%10000==0 and frame_count>0:
+            if frame_count%20000==0 and frame_count>0:
                 torch.save(self.DQN.state_dict(), f'env_lunar.pt')
                 print(f"Saved at frame {frame_count}, episode {episodes}, eps: {self.eps}")
                 print(f'eps:{self.eps:.4f}, lr:{self.DQN.optimizer.defaults["lr"]:.2f},latest rew {cur_epi_reward}')
@@ -192,9 +194,13 @@ class DQN_agent():
                 cur_epi_frame_counter = 0
                 cur_epi_reward = 0
                 episodes += 1
+            if episodes > 100 and episodes % 20 == 0 and terminated:
+                print(f'\nepi: {episodes}, rew: {cur_epi_reward}, frames {cur_epi_frame_counter}')
+                if np.mean(reward_in_episodes[:episodes][-100:]) > 250:
+                    print("Average goal of 250 has been reached, and training is terminated")
+                    break
 
-
-        n_periods = 100
+        n_periods = 500
         periods = np.array_split(frames_in_episodes[:episodes], n_periods)
         average_steps = [np.mean(period) for period in periods]
         plt.plot(list(range(n_periods)),average_steps)
@@ -219,8 +225,8 @@ if __name__  ==  "__main__":
     # simple anna [6000,n_hidden=20,lr=0.0001,eps=0.85,gamma = 0.9]
     pre_trained_DQN = False
     save_DQN = True
-    DDQN = False
-    n_frames = 100000
+    DDQN = True
+    n_frames = 500000
     env_type = "lunar"
 
     if env_type == "cartpole":
@@ -229,15 +235,15 @@ if __name__  ==  "__main__":
         env = gym.make("LunarLander-v2", render_mode="rgb_array")
     env.reset(seed=41)
     # wrapped_env = RecordEpisodeStatistics(env,5000)
-    wrapped_env = RecordVideo(env,video_folder=os.getcwd(),episode_trigger=lambda x: x%400==0 and x > 2000,name_prefix="train_videos_cart")
+    wrapped_env = RecordVideo(env,video_folder=os.getcwd(),episode_trigger=lambda x: x%50==0 and x > 500,name_prefix="train_videos_cart")
     # n_hidden = 20
     n_state = env.observation_space.shape[0]
     n_action = env.action_space.n
-    lr = 0.001 #0.001 #0.0001
-    eps = 1   #0.3 #1
-    eps_decay = 1/n_frames #0.99995
-    gamma = 0.9 #0.9
-    batch_size = 56 #20
+    lr = 0.0001 #0.001 #0.0001
+    eps = 0.6   #0.3 #1
+    eps_decay = 0.6/n_frames #0.99995
+    gamma = 0.99 #0.9
+    batch_size = 64 #20
 
     DQN = DQNetwork(n_state,n_action,lr)
     if DDQN:
@@ -252,7 +258,6 @@ if __name__  ==  "__main__":
                     target_DQN.load_state_dict(torch.load(f'env_lunar.pt'))
                 else:
                     target_DQN.load_state_dict(torch.load(f'env_cart.pt'))
-
             else:
                 if env_type == "cartpole":
                     DQN.load_state_dict(torch.load(f'env_lunar.pt'))
@@ -264,8 +269,6 @@ if __name__  ==  "__main__":
             print("no pretrained DQN available")
             pass
 
-
-    # n_episodes = 2000
     q_learning = DQN_agent(env=wrapped_env,DQN=DQN,target_DQN=target_DQN,eps=eps,eps_decay=eps_decay,gamma=gamma,batch_size=batch_size)
     start_time = time.time()
     q_learning.learn_policy(n_frames=n_frames)
@@ -274,32 +277,3 @@ if __name__  ==  "__main__":
     if save_DQN:
         torch.save(DQN.state_dict(), f'env_lunar.pt')
 
-    #eval post training
-    # n_episodes = 100
-    # q_learning = Q_learning(wrapped_env,agent)
-    # start_time = time.time()
-    # q_learning.learn_policy(n_episodes=n_episodes,eval_mode=True)
-    # print(f'Time for {n_episodes}: {time.time()-start_time}')
-
-    #
-    # if env_type == "cartpole":
-    #     env = gym.make('CartPole-v1', render_mode="rgb_array")
-    # else:
-    #     env = gym.make("LunarLander-v2", render_mode="rgb_array")
-
-    # env = RecordVideo(env,video_folder=os.getcwd(),episode_trigger=lambda x: True)
-    # n_episodes = 5
-    # q_learning = DQN_agent(env, DQN,eps=eps,eps_decay=True,gamma=gamma)
-    # start_time = time.time()
-    # q_learning.learn_policy(n_episodes=n_episodes, eval_mode=True)
-    #
-    # if env_type == "cartpole":
-    #     env = gym.make('CartPole-v1', render_mode="human")
-    # else:
-    #     env = gym.make("LunarLander-v2", render_mode="human")
-    #
-    # n_episodes = 100
-    # q_learning = Q_learning(wrapped_env, DQN,eps=eps,eps_decay=True,gamma=gamma)
-    # start_time = time.time()
-    # q_learning.learn_policy(n_episodes=n_episodes, eval_mode=True)
-    # print(f'Time for {n_episodes}: {time.time() - start_time}')
