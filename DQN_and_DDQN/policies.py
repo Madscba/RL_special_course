@@ -226,7 +226,7 @@ if __name__  ==  "__main__":
     pre_trained_DQN = False
     save_DQN = True
     DDQN = True
-    n_frames = 500000
+    n_frames = 50000
     env_type = "lunar"
 
     if env_type == "cartpole":

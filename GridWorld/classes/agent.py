@@ -1,5 +1,4 @@
-import random
-from policies import pi_selector
+from DQN_and_DDQN.policies import pi_selector
 import numpy as np
 
 class TabularAgent():
