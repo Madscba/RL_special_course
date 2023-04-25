@@ -29,7 +29,7 @@ def get_envs(env_id: str = "LunarLander-v2",
 
 if __name__ == "__main__":
     # Set hyperparams
-    num_envs = 10
+    num_envs = 20
     # Init environments
     envs = get_envs(num_envs=num_envs)
     _ = envs.reset(seed=42)
@@ -40,6 +40,6 @@ if __name__ == "__main__":
     model = PolicyNetwork(n_state, n_action,envs=envs)
     agent = PolicyGradientAgent(envs=envs, model=model)
 
-    agent.learn_policy()
+    agent.learn_policy(n_frames=200)
 
     envs.close()

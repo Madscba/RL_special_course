@@ -2,7 +2,25 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from torch.distributions import Categorical
+from torch.autograd import Variable
+
+class Policy(torch.nn.Module):
+    """ Critic network """
+    def __init__(self, state_dim, action_dim):
+        super(Policy, self).__init__()
+        self.fc1 = torch.nn.Linear(state_dim, 64)
+        self.fc2 = torch.nn.Linear(64, 32)
+        self.fc3 = torch.nn.Linear(32, action_dim)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001)
+
+    def forward(self, state):
+        x = torch.relu(self.fc1(state))
+        x = torch.relu(self.fc2(x))
+        x = torch.tanh(self.fc3(x))
+        return x
+
 class PolicyNetwork(torch.nn.Module):
+    """ Actor network"""
     def __init__(self, state_dim, action_dim,envs,  hiden_dim: int = 64, lr: float = 0.001, action_upper_bound: float = 1,
                  action_lower_bound: float = -1):
         super(PolicyNetwork, self).__init__()
@@ -16,7 +34,7 @@ class PolicyNetwork(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(hiden_dim, hiden_dim),
             torch.nn.ReLU(),
-            torch.nn.Linear(hiden_dim, self.output_dim),
+            #torch.nn.Linear(hiden_dim, self.output_dim),
         )
         self.model_mu = torch.nn.Sequential(
             torch.nn.Linear(hiden_dim, self.output_dim),
@@ -26,7 +44,7 @@ class PolicyNetwork(torch.nn.Module):
         )
 
         self.criterion = torch.nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr)
+        self.optimizer = torch.optim.Adam(list(self.model_shared.parameters()) + list(self.model_mu.parameters()) + list(self.model_sigma.parameters()), lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
 
         self.apply(self._init_weights)
@@ -39,15 +57,14 @@ class PolicyNetwork(torch.nn.Module):
 
     def forward(self, x):
         value = self.model_shared(torch.Tensor(x))
-        #value = (value * 2) - 1
-        return F.softmax(value,dim=1)
+        mu = self.model_mu(value)
+        sigma_sq = self.model_sigma(value)
+        return mu, sigma_sq
 
-    def predict(self, state):
+    def predict(self, x):
         """ Compute Q values for all actions using the DQL. """
         with torch.no_grad():
-            value =  self.model(torch.Tensor(state))
-            value = 1 / (1+torch.exp(value))
-            #value = torch.sigmoid(value)
-            value = value*self.action_space_range-self.action_space_center
-
-            return value
+            value = self.model_shared(torch.Tensor(x))
+            mu = self.model_mu(value)
+            sigma_sq = self.model_sigma(value)
+            return mu, sigma_sq
