@@ -28,6 +28,7 @@ def get_envs(env_id: str = "LunarLander-v2",
 
 
 if __name__ == "__main__":
+    np.random.seed(3)
     # Set hyperparams
     num_envs = 20
     # Init environments
