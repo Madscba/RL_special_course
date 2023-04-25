@@ -4,10 +4,10 @@ import numpy as np
 from torch.distributions import Categorical
 from torch.autograd import Variable
 
-class Policy(torch.nn.Module):
+class CriticNetwork(torch.nn.Module):
     """ Critic network """
     def __init__(self, state_dim, action_dim):
-        super(Policy, self).__init__()
+        super(CriticNetwork, self).__init__()
         self.fc1 = torch.nn.Linear(state_dim, 64)
         self.fc2 = torch.nn.Linear(64, 32)
         self.fc3 = torch.nn.Linear(32, action_dim)
@@ -19,11 +19,11 @@ class Policy(torch.nn.Module):
         x = torch.tanh(self.fc3(x))
         return x
 
-class PolicyNetwork(torch.nn.Module):
+class ActorNetwork(torch.nn.Module):
     """ Actor network"""
     def __init__(self, state_dim, action_dim,envs,  hiden_dim: int = 64, lr: float = 0.001, action_upper_bound: float = 1,
                  action_lower_bound: float = -1):
-        super(PolicyNetwork, self).__init__()
+        super(ActorNetwork, self).__init__()
         self.input_dim = state_dim
         self.output_dim = action_dim
         self.n_envs = envs.action_space.shape[0]

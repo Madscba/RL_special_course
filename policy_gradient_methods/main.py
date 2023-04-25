@@ -1,7 +1,7 @@
 import gymnasium as gym
 import numpy as np
 
-from models import PolicyNetwork
+from models import ActorNetwork
 from agents import PolicyGradientAgent
 
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     n_state = envs.single_observation_space.shape[0]
     n_action = envs.single_action_space.shape[0]
 
-    model = PolicyNetwork(n_state, n_action,envs=envs)
+    model = ActorNetwork(n_state, n_action, envs=envs)
     agent = PolicyGradientAgent(envs=envs, model=model)
 
     agent.learn_policy(n_frames=200)
