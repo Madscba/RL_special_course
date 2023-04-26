@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-
+from tqdm import tqdm
 
 class Policy(nn.Module):
     def __init__(self, state_dim, action_dim):
@@ -40,7 +40,7 @@ def update_policy(policy, rewards, log_probs):
 
 def train(policy, env, num_episodes):
     episode_rewards = []
-    for episode in range(num_episodes):
+    for episode in tqdm(range(num_episodes)):
         state = env.reset()
         done = False
         rewards = []
@@ -54,15 +54,16 @@ def train(policy, env, num_episodes):
         update_policy(policy, rewards, log_probs)
         episode_reward = sum(rewards)
         episode_rewards.append(episode_reward)
-        print('Episode {}: reward = {}'.format(episode, episode_reward))
+        print("Episode {}: reward = {}".format(episode, episode_reward))
 
     plt.plot(episode_rewards)
-    plt.xlabel('Episode')
-    plt.ylabel('Total Reward')
+    plt.xlabel("Episode")
+    plt.ylabel("Total Reward")
     plt.show()
 
-env = gym.make('LunarLanderContinuous-v2')
+
+env = gym.make("LunarLanderContinuous-v2")
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
 policy = Policy(state_dim, action_dim)
-train(policy, env, num_episodes=1000)
+train(policy, env, num_episodes=4000)
