@@ -100,9 +100,10 @@ class PolicyGradientAgent:
                 #         print("Average goal of 250 has been reached, and training is terminated")
                 #         break
 
-        self.visualize_episode_statistics(
-            episodes, eval_mode, frames_in_episodes, n_frames, reward_in_episodes
-        )
+        if self.parser.args.visualize:
+            self.visualize_episode_statistics(
+                episodes, eval_mode, frames_in_episodes, n_frames, reward_in_episodes
+            )
 
     def episode_rollout(
             self, states, learning_algorithm: str = "REINFORCE", n_steps: int = 5
@@ -224,12 +225,17 @@ class PolicyGradientAgent:
             if self.parser.args.entropy:
                 action_loss += (entropy.squeeze(0)).sum()
 
+
             self.critic_network.optimizer.zero_grad()
             value_loss.backward(retain_graph=True)
+            if self.parser.args.grad_clipping:
+                torch.nn.utils.clip_grad_norm_([p for g in self.critic_network.optimizer.param_groups for p in g["params"]], 0.5)
             self.critic_network.optimizer.step()
 
             self.actor_network.optimizer.zero_grad()
             action_loss.backward()
+            if self.parser.args.grad_clipping:
+                torch.nn.utils.clip_grad_norm_([p for g in self.critic_network.optimizer.param_groups for p in g["params"]], 0.5)
             self.actor_network.optimizer.step()
 
     def pol_REINFORCE(self):

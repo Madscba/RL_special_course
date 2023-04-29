@@ -47,29 +47,18 @@ class ActorNetwork(torch.nn.Module):
         self.n_envs = envs.action_space.shape[0]
         self.action_space_range = action_upper_bound - action_lower_bound
         self.action_space_center = self.action_space_range / 2
-        self.model_shared = torch.nn.Sequential(
+
+        self.model = torch.nn.Sequential(
             torch.nn.Linear(self.input_dim, hidden_dim),
             torch.nn.ReLU(),
             torch.nn.Linear(hidden_dim, hidden_dim),
             torch.nn.ReLU(),
-        )
-        self.model_mu = torch.nn.Sequential(
             torch.nn.Linear(hidden_dim, self.output_dim),
         )
-        self.model_sigma = torch.nn.Sequential(
-            torch.nn.Linear(hidden_dim, self.output_dim),
-        )
-        self.criterion = torch.nn.MSELoss()
-        self.optimizer = torch.optim.Adam(
-            list(self.model_shared.parameters())
-            + list(self.model_mu.parameters())
-            + list(self.model_sigma.parameters()),
-            lr,
-        )
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
-            self.optimizer, gamma=0.99
-        )
+        self.optimizer = torch.optim.Adam(self.model.parameters(),lr)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
 
+        self.std = torch.nn.Parameter(torch.ones(self.n_envs,self.output_dim))
     #     self.apply(self._init_weights)
 
     # def _init_weights(self, module):
@@ -79,9 +68,8 @@ class ActorNetwork(torch.nn.Module):
     #             module.bias.data.zero_()
 
     def forward(self, x):
-        value = self.model_shared(torch.Tensor(x))
-        mu = self.model_mu(value)
-        sigma_sq = self.model_sigma(value)
+        mu = self.model(torch.Tensor(x))
+        sigma_sq = self.std #todo consider adding a more mechanism to ensure std to be positive.
         return mu, sigma_sq
 
     def predict(self, x):

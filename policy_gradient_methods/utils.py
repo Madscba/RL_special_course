@@ -10,13 +10,15 @@ class Parser:
             "--env_name", type=str, default="LunarLanderContinuous-v2"
         )
         self.parser.add_argument(
+            "--visualize", type=bool, default=True)
+        self.parser.add_argument(
             "--seed", type=int, default=3, metavar="N", help="random seed (default: 3)"
         )
 
         self.parser.add_argument(
             "--n_episodes",
             type=int,
-            default=1000,
+            default=5000,
             metavar="N",
             help="number of episodes (default: 400)",
         )
@@ -40,6 +42,7 @@ class Parser:
             help="discount factor for reward (default: 0.99)",
         )
 
+
         # network configurations (both actor and critic)
         self.parser.add_argument(
             "--hidden_size",
@@ -54,6 +57,13 @@ class Parser:
             default=0.001,
             metavar="N",
             help="learning rate (default: 0.001)",
+        )
+        self.parser.add_argument(
+            "--grad_clipping",
+            type=float,
+            default=0,
+            metavar="G",
+            help="maximum grad value. If above they are clipped",
         )
 
         self.args = self.parser.parse_args()

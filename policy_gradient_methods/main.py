@@ -56,7 +56,7 @@ if __name__ == "__main__":
             hidden_dim=parser.args.hidden_size,
         )
         agent = PolicyGradientAgent(envs=envs, actor_network=actor_network, critic_network = critic_network, parser=parser)
-        n_episodes = parser.args.n_episodes * 1000 // parser.args.n_environments
+        n_episodes = parser.args.n_episodes * 100 // parser.args.n_environments
     else:
         agent = PolicyGradientAgent(envs=envs, actor_network=actor_network, parser=parser)
         n_episodes = parser.args.n_episodes // parser.args.n_environments
