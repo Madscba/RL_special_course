@@ -113,12 +113,13 @@ class PolicyGradientAgent:
                 cur_epi_reward = 0
                 self.episodes += 1
 
+        print(f'visualize {self.parser.args.visualize}')
         if self.parser.args.visualize:
             self.visualize_episode_statistics(
                 self.episodes, eval_mode, frames_in_episodes, n_frames, reward_in_episodes, self.parser
             )
-        if True:
-            print("Plot stuff")
+        if self.parser.args.visualize:
+            print("Plotting debugging graphs")
             plt.plot(np.arange(self.frames), self.pred_mu[:self.frames, 0],label="mu_0")
             plt.plot(np.arange(self.frames), self.pred_mu[:self.frames, 1],label="mu_1")
             plt.title("mu")

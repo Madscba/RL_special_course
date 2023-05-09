@@ -1,4 +1,4 @@
-$laptop_paths = "True"
+$laptop_paths=False
 
 $test_name = "Reinforce plain"
 echo "starting $test_name"
@@ -17,7 +17,8 @@ $file_path = "RL_special_course\policy_gradient_methods\main.py"
 $full_path = Join-Path -Path $repo_path -ChildPath $file_path
 echo $full_path
 
-& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 2 --learning_algorithm "REINFORCE" --visualize False
+& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 2 --learning_algorithm "REINFORCE" --visualize False --env_name "LunarLanderContinuous-v2"
+& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 2 --learning_algorithm "REINFORCE" --visualize False --env_name "CartPole-v1"
 
 # Check the exit code of the Python script
 if ($LASTEXITCODE -eq 0) {

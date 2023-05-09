@@ -1,4 +1,4 @@
-$laptop_paths = "True"
+$laptop_paths=False
 
 $test_name = "AC w. entropy"
 echo "starting $test_name"
@@ -17,7 +17,8 @@ $file_path = "RL_special_course\policy_gradient_methods\main.py"
 $full_path = Join-Path -Path $repo_path -ChildPath $file_path
 echo $full_path
 
-& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 10 --learning_algorithm "AC" --visualize False --entropy True
+& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 1 --learning_algorithm "AC" --visualize False --entropy True --grad_clipping 1 --env_name "LunarLanderContinuous-v2"
+& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 1 --learning_algorithm "AC" --visualize False --entropy True --grad_clipping 1 --env_name "CartPole-v1"
 
 # Check the exit code of the Python script
 if ($LASTEXITCODE -eq 0) {

@@ -42,6 +42,7 @@ if __name__ == "__main__":
     _ = envs.reset(seed=42)
 
     #Define the learning algorithm
+    print(f"args: {parser.args}")
     lr_algo = parser.args.learning_algorithm
     n_state = envs.single_observation_space.shape[0]
 

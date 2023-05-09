@@ -4,8 +4,8 @@ While (Get-Job -State "Running") {
     Start-Sleep 2
 }
 
-<# $python_executable1 = "C:\Users\Mads-\miniconda3\envs\RL_special_course\python.exe" #>
-$python_executable1 = "C:\Users\Mads-\AppData\Local\pypoetry\Cache\virtualenvs\rl-NjavQPoj-py3.8\Scripts\python.exe"
+$python_executable1 = "C:\Users\Mads-\miniconda3\envs\RL_special_course\python.exe"
+<#$python_executable1 = "C:\Users\Mads-\AppData\Local\pypoetry\Cache\virtualenvs\rl-NjavQPoj-py3.8\Scripts\python.exe" #>
 
 $root_directory_1 = "policy_gradient_methods/shell_scripts/test_scripts"
 # Define the scripts you want to run

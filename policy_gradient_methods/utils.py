@@ -31,13 +31,13 @@ class Parser:
         )
 
         # learning algorithm configuration
-        self.parser.add_argument("--learning_algorithm", type=str, default="REINFORCE")  # REINFORCE
+        self.parser.add_argument("--learning_algorithm", type=str, default="AC")  # REINFORCE
         self.parser.add_argument("--entropy", type=bool, default=False,
                                  help="add entropy regularization to objective to encourage learning")
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.999,
+            default=0.99,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -54,14 +54,14 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.001,
+            default=0.01,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
         self.parser.add_argument(
             "--grad_clipping",
             type=float,
-            default=1,
+            default=0,
             metavar="G",
             help="maximum grad value. If above 0 they are clipped",
         )

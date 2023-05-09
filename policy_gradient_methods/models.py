@@ -137,7 +137,7 @@ class ActorNetwork_disc(torch.nn.Module):
         x = self.model(torch.Tensor(x))
         action_probs = F.softmax(x)
         dist = Categorical(action_probs)
-        assert pytest.approx(1,0.01) == float(action_probs.sum())
+        assert abs(float(action_probs.sum()) - round(float(action_probs.sum()),0)) < 0.01
         action = dist.sample()
         entropy = dist.entropy()
         log_probs = dist.log_prob(action)

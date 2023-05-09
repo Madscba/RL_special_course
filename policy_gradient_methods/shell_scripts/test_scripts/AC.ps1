@@ -1,4 +1,4 @@
-$laptop_paths = "True"
+$laptop_paths=False
 
 $test_name = "AC plain"
 echo "starting $test_name"
@@ -6,6 +6,7 @@ echo "starting $test_name"
 
 
 if ($laptop_paths) {
+echo "Laptop"
 $python_executable1 = "C:\Users\Mads-\AppData\Local\pypoetry\Cache\virtualenvs\rl-NjavQPoj-py3.8\Scripts\python.exe"
 $repo_path = "C:\Users\Mads-\Documents\Universitet\Kandidat\4_semester\RL"
 } else {
@@ -17,7 +18,8 @@ $file_path = "RL_special_course\policy_gradient_methods\main.py"
 $full_path = Join-Path -Path $repo_path -ChildPath $file_path
 echo $full_path
 
-& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 10 --learning_algorithm "AC" --visualize False
+& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 1 --learning_algorithm "AC" --env_name "LunarLanderContinuous-v2" --visualize False
+<#& $python_executable1 $full_path --seed 3 --n_episodes 2 --n_environments 1 --learning_algorithm "AC" --visualize 0 --env_name "CartPole-v1" #>
 
 # Check the exit code of the Python script
 if ($LASTEXITCODE -eq 0) {
