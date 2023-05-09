@@ -7,7 +7,7 @@ class Parser:
 
         # environment configuration
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLanderContinuous-v2"
+            "--env_name", type=str, default="CartPole-v1" # "LunarLanderContinuous-v2", CartPole-v1
         )
         self.parser.add_argument(
             "--visualize", type=bool, default=True)
@@ -18,28 +18,28 @@ class Parser:
         self.parser.add_argument(
             "--n_episodes",
             type=int,
-            default=5000,
+            default=1000,
             metavar="N",
             help="number of episodes (default: 400)",
         )
         self.parser.add_argument(
             "--n_environments",
             type=int,
-            default=10,
+            default=1,
             metavar="N",
-            help="number of episodes (default: 10)",
+            help="number of episodes (default: 1)",
         )
 
         # learning algorithm configuration
-        self.parser.add_argument("--learning_algorithm", type=str, default="AC")  # REINFORCE
+        self.parser.add_argument("--learning_algorithm", type=str, default="REINFORCE")  # REINFORCE
         self.parser.add_argument("--entropy", type=bool, default=False,
                                  help="add entropy regularization to objective to encourage learning")
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.99,
+            default=0.999,
             metavar="G",
-            help="discount factor for reward (default: 0.99)",
+            help="discount factor for reward (default: 0.999)",
         )
 
 
@@ -47,9 +47,9 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=64,
+            default=32,
             metavar="N",
-            help="number of episodes (default: 64)",
+            help="number of episodes (default: 32)",
         )
         self.parser.add_argument(
             "--lr",
@@ -61,9 +61,9 @@ class Parser:
         self.parser.add_argument(
             "--grad_clipping",
             type=float,
-            default=0,
+            default=1,
             metavar="G",
-            help="maximum grad value. If above they are clipped",
+            help="maximum grad value. If above 0 they are clipped",
         )
 
         self.args = self.parser.parse_args()

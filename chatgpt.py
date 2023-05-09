@@ -41,13 +41,13 @@ def update_policy(policy, rewards, log_probs):
 def train(policy, env, num_episodes):
     episode_rewards = []
     for episode in tqdm(range(num_episodes)):
-        state = env.reset()
+        state,_ = env.reset()
         done = False
         rewards = []
         log_probs = []
         while not done:
             action, log_prob = select_action(state, policy)
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, done, terminated,_ = env.step(action)
             rewards.append(reward)
             log_probs.append(log_prob)
             state = next_state
@@ -62,7 +62,7 @@ def train(policy, env, num_episodes):
     plt.show()
 
 
-env = gym.make("LunarLanderContinuous-v2")
+env = gym.make("LunarLanderContinuous-v2") #LunarLanderContinuous-v2
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
 policy = Policy(state_dim, action_dim)

@@ -13,10 +13,14 @@ class EpisodeBuffer:
     ):
         self.capacity = capacity
         self.event_idx = 0
+        self.action_dim = action_dim
+        state_dim = envs.single_observation_space.shape[0]
+
         self.event_tuples = torch.zeros(
-            (envs.action_space.shape[0], 2 * state_dim + action_dim + 6, capacity)
-        )  # +6: reward, terminated, 2x log_probs, 2x entropy
-        # ('state','action','reward',next_state','terminated')
+            (envs.action_space.shape[0], 2 * state_dim + 3 * action_dim + 2, capacity)
+        )
+        # we want to save: ('state','action','reward',next_state','terminated', log_probs, entropy)
+        # +2 as we need room for reward, terminated
         self.batch_size = batch_size
 
     def save_event(
@@ -25,12 +29,12 @@ class EpisodeBuffer:
         self.event_tuples[:, :, self.event_idx % self.capacity] = torch.hstack(
             (
                 torch.from_numpy(state),
-                torch.from_numpy(action),
+                torch.from_numpy(action).reshape(-1, self.action_dim),
                 torch.from_numpy(reward.reshape(-1, 1)),
                 torch.from_numpy(next_state),
                 torch.from_numpy(terminated.reshape(-1, 1)),
-                log_probs.squeeze(0),
-                entropy.squeeze(0),
+                log_probs.reshape(-1, self.action_dim),
+                entropy.reshape(-1, self.action_dim),
             )
         )
         self.event_idx += 1
