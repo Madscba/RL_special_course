@@ -7,7 +7,7 @@ class Parser:
 
         # environment configuration
         self.parser.add_argument(
-            "--env_name", type=str, default="CartPole-v1" # "LunarLanderContinuous-v2", CartPole-v1
+            "--env_name", type=str, default="LunarLanderContinuous-v2" # "LunarLanderContinuous-v2", CartPole-v1
         )
         self.parser.add_argument(
             "--visualize", type=bool, default=True)
@@ -18,7 +18,7 @@ class Parser:
         self.parser.add_argument(
             "--n_episodes",
             type=int,
-            default=1000,
+            default=2000,
             metavar="N",
             help="number of episodes (default: 400)",
         )
@@ -32,12 +32,12 @@ class Parser:
 
         # learning algorithm configuration
         self.parser.add_argument("--learning_algorithm", type=str, default="AC")  # REINFORCE
-        self.parser.add_argument("--entropy", type=bool, default=False,
+        self.parser.add_argument("--entropy", type=bool, default=True,
                                  help="add entropy regularization to objective to encourage learning")
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.99,
+            default=0.999,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -54,14 +54,14 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.01,
+            default=0.001,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
         self.parser.add_argument(
             "--grad_clipping",
             type=float,
-            default=0,
+            default=1,
             metavar="G",
             help="maximum grad value. If above 0 they are clipped",
         )

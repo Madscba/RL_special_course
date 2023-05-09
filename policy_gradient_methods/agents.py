@@ -300,7 +300,7 @@ class PolicyGradientAgent:
             rotation=60,
         )
         plt.title(
-            f'Average episode length, lr*100:{self.actor_network.optimizer.defaults["lr"] * 100},epi:{episodes}, algo: {self.parser.args.learning_algorithm}, \n ent: {self.parser.args.entropy}, grad_cl: {self.parser.args.entropy}, n_env: {self.parser.args.n_environments}'
+            f'Average episode length, lr:{self.actor_network.optimizer.defaults["lr"]},epi:{episodes}, algo: {self.parser.args.learning_algorithm}, \n ent: {self.parser.args.entropy}, grad_cl: {self.parser.args.entropy}, n_env: {self.parser.args.n_environments}'
         )
         plt.subplots_adjust(bottom=0.2)
         plt.show()
@@ -318,7 +318,7 @@ class PolicyGradientAgent:
             rotation=60,
         )
         plt.title(
-            f'Average reward pr. episode, lr:{self.actor_network.optimizer.defaults["lr"] * 100},epi:{episodes}, algo: {self.parser.args.learning_algorithm}, \n ent: {self.parser.args.entropy}, grad_cl: {self.parser.args.entropy}, n_env: {self.parser.args.n_environments}'
+            f'Average reward pr. episode, lr:{self.actor_network.optimizer.defaults["lr"] },epi:{episodes}, algo: {self.parser.args.learning_algorithm}, \n ent: {self.parser.args.entropy}, grad_cl: {self.parser.args.entropy}, n_env: {self.parser.args.n_environments}'
         )
         plt.subplots_adjust(bottom=0.2)
         plt.show()

@@ -51,6 +51,7 @@ if __name__ == "__main__":
         actor_network = ActorNetwork_disc(
             state_dim=n_state,
             action_dim=n_action,
+            lr=parser.args.lr,
             envs=envs,
             hidden_dim=parser.args.hidden_size,
         )
