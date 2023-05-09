@@ -58,7 +58,7 @@ if __name__ == "__main__":
         n_action = envs.single_action_space.shape[0]
         actor_network = ActorNetwork_cont(
             state_dim=n_state,
-            lr = parser.args.n_episodes,
+            lr = parser.args.lr,
             action_dim=n_action,
             envs=envs,
             hidden_dim=parser.args.hidden_size,
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     if lr_algo != "REINFORCE":
         critic_network = CriticNetwork(
             state_dim=n_state,
-            lr=parser.args.n_episodes,
+            lr=parser.args.lr,
             action_dim=n_action,
             envs=envs,
             hidden_dim=parser.args.hidden_size,
