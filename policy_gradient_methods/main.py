@@ -5,19 +5,15 @@ from agents import PolicyGradientAgent
 from models import ActorNetwork_cont,ActorNetwork_disc, CriticNetwork
 from utils import Parser
 from gymnasium.wrappers import RecordVideo
-
-
-
-
 def get_envs(
     env_id: str = "LunarLander-v2",
     num_envs: int = 10,
-    asynchronous: bool = False,
-    continuous: bool = True,
-    gravity: float = -10.0,
-    enable_wind: bool = False,
-    wind_power: float = 15.0,
-    turbulence_power: float = 1.5,
+    #asynchronous: bool = False,
+    #continuous: bool = True,
+    #gravity: float = -10.0,
+    #enable_wind: bool = False,
+    #wind_power: float = 15.0,
+    #turbulence_power: float = 1.5,
 ):
     envs = gym.vector.make(
         id=env_id,
@@ -42,7 +38,6 @@ if __name__ == "__main__":
     _ = envs.reset(seed=42)
 
     #Define the learning algorithm
-    print(f"args: {parser.args}")
     lr_algo = parser.args.learning_algorithm
     n_state = envs.single_observation_space.shape[0]
 
@@ -59,7 +54,7 @@ if __name__ == "__main__":
         n_action = envs.single_action_space.shape[0]
         actor_network = ActorNetwork_cont(
             state_dim=n_state,
-            lr = parser.args.lr,
+            lr = parser.args.lr/10,
             action_dim=n_action,
             envs=envs,
             hidden_dim=parser.args.hidden_size,

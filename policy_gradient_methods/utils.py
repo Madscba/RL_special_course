@@ -18,7 +18,7 @@ class Parser:
         self.parser.add_argument(
             "--n_episodes",
             type=int,
-            default=2000,
+            default=20,
             metavar="N",
             help="number of episodes (default: 400)",
         )

@@ -73,7 +73,7 @@ class ActorNetwork_cont(torch.nn.Module):
         mu = self.model(torch.Tensor(x))
         sigma_sq = self.fc(x) + self.std #todo consider adding a more mechanism to ensure std to be positive.
 
-        sigma_sq = F.softplus(sigma_sq)  # cannot have negative std. dev.
+        sigma_sq = torch.clamp(sigma_sq, 0.1, 5)  # cannot have negative std. dev.
         dist = torch.distributions.Normal(mu, sigma_sq)
         action = dist.sample()
         entropy = dist.entropy()  # Corresponds to 0.5 * ((sigma_sq ** 2 * 2 * pi).log() + 1)  # Entropy of gaussian: https://gregorygundersen.com/blog/2020/09/01/gaussian-entropy/
