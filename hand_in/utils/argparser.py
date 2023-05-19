@@ -9,7 +9,7 @@ class Parser:
         self.parser.add_argument("--seed", type=int, default=3, metavar="N", help="random seed (default: 3)")
 
         #Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
-        self.parser.add_argument("--env_name",type=str,default="LunarLander-v2")
+        self.parser.add_argument("--env_name",type=str,default="LunarLanderContinuous-v2")
 
         #Logger config
         self.parser.add_argument("--log_format", type=str, default='default',help = "'file' saves .csv, 'console' prints to terminal. 'default' does both")
@@ -21,8 +21,8 @@ class Parser:
         self.parser.add_argument("--n_env",type=int,default=1,metavar="N",help="number of environments (default: 1)")
 
         # learning algorithm configuration
-        self.parser.add_argument("--algorithm", type=str, default="REINFORCE") #DDQN, REINFORCE, AC, SAC
-        self.parser.add_argument("--gamma",type=float,default=0.995,metavar="G",help="discount factor for reward (default: 0.999)")
+        self.parser.add_argument("--algorithm", type=str, default="AC") #DDQN, REINFORCE, AC, SAC
+        self.parser.add_argument("--gamma",type=float,default=0.95,metavar="G",help="discount factor for reward (default: 0.999)")
 
         # model configurations (both actor and critic)
         self.parser.add_argument("--hidden_size",type=int,default=32,metavar="N",help="number of episodes (default: 32)")
