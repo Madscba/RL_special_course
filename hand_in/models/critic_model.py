@@ -3,20 +3,20 @@ class CriticNetwork(torch.nn.Module):
     """Critic network"""
 
     def __init__(
-        self, state_dim, action_dim, envs, hidden_dim: int = 64, lr: float = 0.001
-    ):
+        self, argparser,state_dim,action_dim,n_actions, action_type):
         super(CriticNetwork, self).__init__()
         self.input_dim = state_dim
         self.output_dim = action_dim
-        self.n_envs = envs.action_space.shape[0]
+        self.n_envs = argparser.args.n_env
+        self.hidden_dim = argparser.args.n_env
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(self.input_dim, hidden_dim),
+            torch.nn.Linear(self.input_dim, self.hidden_dim),
             torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim, hidden_dim),
+            torch.nn.Linear(self.hidden_dim, self.hidden_dim),
             torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim, 1),
+            torch.nn.Linear(self.hidden_dim, 1),
         )
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=lr, weight_decay=1e-5)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=argparser.args.lr, weight_decay=1e-5)
         self.criterion = torch.nn.MSELoss()  # MSELoss()
 
     def forward(self, x):
