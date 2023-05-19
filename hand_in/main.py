@@ -13,20 +13,20 @@ if __name__ == "__main__":
     e, state = get_envs(env_id=p.args.env_name, num_envs=p.args.n_env)
     print(e)
     l = get_logger(p)
-    a = get_agent(p,e,l)
+    a = get_agent(p,e)
 
     #################
     # for each episode
     for frame_count in tqdm(range(p.args.n_steps), desc=f"Training"):
         # Follow policy:
-        action = a.follow_policy(state)
+        action, policy_response_dict = a.follow_policy(state)
         # take action A and observe rew, new_state
         new_state, reward, terminated, truncated, info = e.step(action)
         # Save history (replay buffer) - not needed for DQN
         if a.uses_replay_buffer():
-            a.replay_buffer.save_event(state, action, reward, new_state, terminated)
+            a.replay_buffer.save_event(state, action, reward, new_state, terminated, policy_response_dict)
 
-        a.update_policy(state, action, reward, new_state, terminated)
+        a.update_policy(state, action, reward, new_state, terminated,policy_response_dict)
         state = new_state
 
         l.log_step(reward)

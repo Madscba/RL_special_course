@@ -22,7 +22,7 @@ class Parser:
 
         # learning algorithm configuration
         self.parser.add_argument("--algorithm", type=str, default="REINFORCE") #DDQN, REINFORCE, AC, SAC
-        self.parser.add_argument("--gamma",type=float,default=0.95,metavar="G",help="discount factor for reward (default: 0.999)")
+        self.parser.add_argument("--gamma",type=float,default=0.995,metavar="G",help="discount factor for reward (default: 0.999)")
 
         # model configurations (both actor and critic)
         self.parser.add_argument("--hidden_size",type=int,default=32,metavar="N",help="number of episodes (default: 32)")

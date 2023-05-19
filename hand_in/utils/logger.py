@@ -86,7 +86,7 @@ class RLLogger:
         avg_rewards = [np.mean(interval) for interval in rew_intervals]
         intervals = ['{}:{}'.format(i * (self.frame_interval), (i + 1) * self.frame_interval)
                                  for i in range(self.run_config['n_steps'] // self.frame_interval)]
-        plt.xticks(np.linspace(0, self.run_config['n_steps'] // self.frame_interval,10), intervals[::10],
+        plt.xticks(np.linspace(0, self.run_config['n_steps'] // self.frame_interval,10), intervals[::(self.run_config['n_steps'] // self.frame_interval // 10)],
                    rotation=60, )
         plt.plot(avg_rewards)
         plt.subplots_adjust(bottom=0.3)

@@ -4,32 +4,32 @@ class ActorNetwork_cont(torch.nn.Module):
 
     def __init__(
         self,
+        argparser,
         state_dim,
         action_dim,
-        envs,
-        hidden_dim: int = 64,
-        lr: float = 0.001,
-        action_upper_bound: float = 1,
-        action_lower_bound: float = -1,
+        #action_upper_bound: float = 1,
+        #action_lower_bound: float = -1,
     ):
         super(ActorNetwork_cont, self).__init__()
         self.input_dim = state_dim
         self.output_dim = action_dim
-        self.n_envs = envs.action_space.shape[0]
-        self.action_space_range = action_upper_bound - action_lower_bound
-        self.action_space_center = self.action_space_range / 2
+        self.n_envs = argparser.args.n_env
+        self.hidden_dim = argparser.args.n_env
+        self.lr = argparser.args.lr
+        #self.action_space_range = action_upper_bound - action_lower_bound
+        #self.action_space_center = self.action_space_range / 2
         self.continuous = True
 
         self.model = torch.nn.Sequential(
-            torch.nn.Linear(self.input_dim, hidden_dim),
+            torch.nn.Linear(self.input_dim, self.hidden_dim),
             torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim, hidden_dim),
+            torch.nn.Linear(self.hidden_dim, self.hidden_dim),
             torch.nn.ReLU(),
-            torch.nn.Linear(hidden_dim, self.output_dim),
+            torch.nn.Linear(self.hidden_dim, self.output_dim),
         )
         self.std = torch.nn.Parameter(torch.ones(self.n_envs, self.output_dim))
         self.fc = torch.nn.Linear(self.input_dim, self.output_dim)
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
         self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
             self.optimizer, gamma=0.99
         )

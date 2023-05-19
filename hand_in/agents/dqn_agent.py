@@ -25,7 +25,7 @@ class DQNAgent(BaseAgent):
 
     def initialize_policy(self):
         pass
-    def update_policy(self, state, action, reward, new_state, terminated):
+    def update_policy(self, state, action, reward, new_state, terminated,empty_dict:dict={}):
         if not self.use_replay:
             self.update_DQN(state, action, reward, new_state, terminated)
         else:
@@ -38,7 +38,7 @@ class DQNAgent(BaseAgent):
             action = self.sample_env.action_space.sample()
         else:
             action = np.array([torch.argmax(self.DQN.predict(state)).item()])
-        return action
+        return action, {}
 
     def save_models(self):
         pass

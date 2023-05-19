@@ -17,7 +17,7 @@ def get_agent(argparser, environments):
         agent = DQNAgent(argparser=argparser,use_DDQN=True,state_dim=state_dim, action_dim=action_dim, n_actions = n_actions)
         return agent
     elif argparser.args.algorithm == "REINFORCE":
-        agent = ReinforceAgent()
+        agent = ReinforceAgent(argparser=argparser,action_dim=action_dim,state_dim=state_dim,n_actions=n_actions,action_type=action_type)
         return agent
     elif argparser.args.algorithm == "AC":
         agent = ACAgent()
