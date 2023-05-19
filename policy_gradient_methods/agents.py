@@ -16,35 +16,36 @@ class PolicyGradientAgent:
         self.n_env = parser.args.n_environments
         self.critic_network = critic_network
 
-        #For debugging purposes
+        # For debugging purposes
         self.episodes = 0
         self.frames = 0
-        self.pred_mu = np.zeros((parser.args.n_episodes,2), dtype=float)
-        self.pred_sigma_sq = np.zeros((parser.args.n_episodes,2), dtype=float)
+        self.pred_mu = np.zeros((parser.args.n_episodes, 2), dtype=float)
+        self.pred_sigma_sq = np.zeros((parser.args.n_episodes, 2), dtype=float)
         self.value_loss = np.zeros(parser.args.n_episodes, dtype=float)
         self.action_loss = np.zeros(parser.args.n_episodes, dtype=float)
-        self.entropy = np.zeros((parser.args.n_episodes,2), dtype=float)
-        self.log_prob = np.zeros((parser.args.n_episodes,2), dtype=float)
+        self.entropy = np.zeros((parser.args.n_episodes, 2), dtype=float)
+        self.log_prob = np.zeros((parser.args.n_episodes, 2), dtype=float)
         self.continuous = self.actor_network.continuous
         if self.continuous:
             self.action_dim = envs.single_action_space.shape[0]
         else:
-            self.action_dim = 1 #Only pick a single action
+            self.action_dim = 1  # Only pick a single action
 
     def set_train_mode(self):
         self.actor_network.train()
         if self.critic_network:
             self.critic_network.train()
+
     def set_eval_mode(self):
         self.actor_network.eval()
         if self.critic_network:
             self.critic_network.eval()
 
     def learn_policy(
-            self,
-            n_frames: int = 2000,
-            eval_mode: bool = False,
-            learning_algorithm: str = "REINFORCE",
+        self,
+        n_frames: int = 2000,
+        eval_mode: bool = False,
+        learning_algorithm: str = "REINFORCE",
     ):
         self.set_train_mode()
         reward_in_episodes = np.zeros(30000, dtype=float)
@@ -57,88 +58,143 @@ class PolicyGradientAgent:
         states, _ = self.envs.reset()
         # Algorithmic steps
         # for each episode
-        for frame_count in tqdm(range(n_frames), desc=f"Frames (training :{not eval_mode}):"):
-            #if frame_count % 20000 == 0 and frame_count > 0:
+        for frame_count in tqdm(
+            range(n_frames), desc=f"Frames (training :{not eval_mode}):"
+        ):
+            # if frame_count % 20000 == 0 and frame_count > 0:
             #    self.save_model(self.actor_network)
             # Generate episode / steps
-            episode_history, termination_step, step_info = self.episode_rollout(states, lr_algo=learning_algorithm)
-            self.update_model(episode_history, termination_step, lr_algo=learning_algorithm, step_info=step_info)
+            episode_history, termination_step, step_info = self.episode_rollout(
+                states, lr_algo=learning_algorithm
+            )
+            self.update_model(
+                episode_history,
+                termination_step,
+                lr_algo=learning_algorithm,
+                step_info=step_info,
+            )
 
             if learning_algorithm == "REINFORCE":
                 cur_epi_reward = (
-                        np.sum(
-                            [
-                                episode_history[
+                    np.sum(
+                        [
+                            episode_history[
                                 idx,
-                                self.actor_network.input_dim
-                                + self.action_dim,
+                                self.actor_network.input_dim + self.action_dim,
                                 :term_step,
-                                ]
-                                .sum()
-                                .detach()
-                                .numpy()
-                                for idx, term_step in enumerate(termination_step)
                             ]
-                        )
-                        / self.n_env
+                            .sum()
+                            .detach()
+                            .numpy()
+                            for idx, term_step in enumerate(termination_step)
+                        ]
+                    )
+                    / self.n_env
                 )
                 cur_epi_frame_counter = episode_history.shape[-1]
                 print(f"\n epi: {self.episodes}, epi_rew: {cur_epi_reward}")
             else:
                 self.frames = frame_count
-                states, actions, rewards, new_states, terminated, log_probs, entropy = step_info
+                (
+                    states,
+                    actions,
+                    rewards,
+                    new_states,
+                    terminated,
+                    log_probs,
+                    entropy,
+                ) = step_info
                 # new_states, reward, terminated = step_info #todo figure out how to add step number info to limit maximum episode length
                 states = new_states
                 cur_epi_frame_counter += 1
                 cur_epi_reward += rewards.sum()
-            #Reset environment if necessary, and save episode statistics
-            if (terminated.any() or cur_epi_frame_counter > 1000 or learning_algorithm == "REINFORCE"):
+            # Reset environment if necessary, and save episode statistics
+            if (
+                terminated.any()
+                or cur_epi_frame_counter > 1000
+                or learning_algorithm == "REINFORCE"
+            ):
                 states, _ = self.envs.reset()
                 # terminated = False
                 reward_in_episodes[self.episodes] = cur_epi_reward / self.n_env
                 frames_in_episodes[self.episodes] = cur_epi_frame_counter
-                print(f"\n ep: {self.episodes}, reward: {cur_epi_reward}, epi length: {cur_epi_frame_counter}# actions: {actions[0]}"
-                ) if self.episodes % 1 == 0 and learning_algorithm !="REINFORCE" else "",
+                print(
+                    f"\n ep: {self.episodes}, reward: {cur_epi_reward}, epi length: {cur_epi_frame_counter}# actions: {actions[0]}"
+                ) if self.episodes % 1 == 0 and learning_algorithm != "REINFORCE" else "",
                 cur_epi_frame_counter = 0
                 cur_epi_reward = 0
                 self.episodes += 1
 
-        print(f'visualize {self.parser.args.visualize}')
+        print(f"visualize {self.parser.args.visualize}")
         if self.parser.args.visualize:
-            self.visualize_episode_statistics(self.episodes, eval_mode, frames_in_episodes, n_frames, reward_in_episodes, self.parser)
+            self.visualize_episode_statistics(
+                self.episodes,
+                eval_mode,
+                frames_in_episodes,
+                n_frames,
+                reward_in_episodes,
+                self.parser,
+            )
         if self.parser.args.visualize:
             print("Plotting debugging graphs")
-            plt.plot(np.arange(self.frames), self.pred_mu[:self.frames, 0],label="mu_0")
-            plt.plot(np.arange(self.frames), self.pred_mu[:self.frames, 1],label="mu_1")
+            plt.plot(
+                np.arange(self.frames), self.pred_mu[: self.frames, 0], label="mu_0"
+            )
+            plt.plot(
+                np.arange(self.frames), self.pred_mu[: self.frames, 1], label="mu_1"
+            )
             plt.title("mu")
             plt.legend()
             plt.show()
 
-            plt.plot(np.arange(self.frames), self.entropy[:self.frames, 1],label="entropy_0")
-            plt.plot(np.arange(self.frames), self.entropy[:self.frames, 0],label="entropy_1")
+            plt.plot(
+                np.arange(self.frames),
+                self.entropy[: self.frames, 1],
+                label="entropy_0",
+            )
+            plt.plot(
+                np.arange(self.frames),
+                self.entropy[: self.frames, 0],
+                label="entropy_1",
+            )
             plt.legend()
             plt.title("Entropies")
             plt.show()
 
-            plt.plot(np.arange(self.frames), self.pred_sigma_sq[:self.frames, 1],label="sigma_sq_0")
-            plt.plot(np.arange(self.frames), self.pred_sigma_sq[:self.frames, 0],label="sigma_sq_1")
+            plt.plot(
+                np.arange(self.frames),
+                self.pred_sigma_sq[: self.frames, 1],
+                label="sigma_sq_0",
+            )
+            plt.plot(
+                np.arange(self.frames),
+                self.pred_sigma_sq[: self.frames, 0],
+                label="sigma_sq_1",
+            )
             plt.title("sigma_sq")
             plt.legend()
             plt.show()
 
-            plt.plot(np.arange(self.frames), self.value_loss[:self.frames],label="value_loss")
-            plt.plot(np.arange(self.frames), self.action_loss[:self.frames],label="action_loss")
+            plt.plot(
+                np.arange(self.frames),
+                self.value_loss[: self.frames],
+                label="value_loss",
+            )
+            plt.plot(
+                np.arange(self.frames),
+                self.action_loss[: self.frames],
+                label="action_loss",
+            )
             plt.title("Losses during frames")
             plt.legend()
             plt.show()
-    def episode_rollout(
-            self, states, lr_algo: str = "REINFORCE", n_steps: int = 5
-    ):
+
+    def episode_rollout(self, states, lr_algo: str = "REINFORCE", n_steps: int = 5):
         if lr_algo == "REINFORCE":  # continue until termination
             states, _ = self.envs.reset()
             episode_termination_step = np.repeat(1002, self.envs.action_space.shape[0])
             episode_terminated = np.repeat(0, self.envs.action_space.shape[0])
-            epi_buffer = EpisodeBuffer(envs = self.envs,action_dim = self.action_dim)
+            epi_buffer = EpisodeBuffer(envs=self.envs, action_dim=self.action_dim)
             episode_step = 0
             while not episode_terminated.all():
                 actions, log_probs, entropy = self.follow_policy(states)
@@ -161,11 +217,14 @@ class PolicyGradientAgent:
             episode_hist = epi_buffer.get_episode_hist()
             return episode_hist, episode_termination_step, _
         elif lr_algo == "AC":
-
             actions, log_probs, entropy = self.follow_policy(states)
             new_states, rewards, terminated, truncated, info = self.envs.step(actions)
 
-            return None, None, (states, actions, rewards, new_states, terminated, log_probs, entropy)
+            return (
+                None,
+                None,
+                (states, actions, rewards, new_states, terminated, log_probs, entropy),
+            )
 
     def update_model(self, episode_history, termination_step, lr_algo, step_info):
         # with torch.autograd.set_detect_anomaly(True):
@@ -173,17 +232,15 @@ class PolicyGradientAgent:
             for idx, terminated_at in enumerate(termination_step):
                 rel_episode_hist = episode_history[idx, :, :terminated_at].clone()
                 rel_rewards = rel_episode_hist[
-                              self.actor_network.input_dim + self.action_dim, :
-                              ].clone()
+                    self.actor_network.input_dim + self.action_dim, :
+                ].clone()
                 log_prob_idx = (
-                        2 * self.actor_network.input_dim
-                        + self.action_dim
-                        + 2) #('state','action','reward',next_state','terminated', log_probs, entropy)
-
+                    2 * self.actor_network.input_dim + self.action_dim + 2
+                )  # ('state','action','reward',next_state','terminated', log_probs, entropy)
 
                 rel_log_probs = rel_episode_hist[
-                                log_prob_idx: log_prob_idx + 2, :
-                                ].clone()
+                    log_prob_idx : log_prob_idx + 2, :
+                ].clone()
                 G = torch.zeros(1, 1, requires_grad=False)
                 loss = Variable(
                     torch.Tensor([0]), requires_grad=True
@@ -196,50 +253,91 @@ class PolicyGradientAgent:
             self.actor_network.optimizer.zero_grad()
             loss.backward()  # set retain_graph to True
             if self.parser.args.grad_clipping:
-                torch.nn.utils.clip_grad_norm_([p for g in self.actor_network.optimizer.param_groups for p in g["params"]], 1)
+                torch.nn.utils.clip_grad_norm_(
+                    [
+                        p
+                        for g in self.actor_network.optimizer.param_groups
+                        for p in g["params"]
+                    ],
+                    1,
+                )
             self.actor_network.optimizer.step()
         elif lr_algo == "AC":
-            states, actions, rewards, new_states, terminated, log_probs, entropy = step_info
+            (
+                states,
+                actions,
+                rewards,
+                new_states,
+                terminated,
+                log_probs,
+                entropy,
+            ) = step_info
 
-            #Calculate reward and critic estimate
-            reward = torch.Tensor(rewards).reshape(-1, 1) + self.parser.args.gamma * self.critic_network(torch.Tensor(new_states)) * torch.tensor((1 - terminated.reshape(-1, 1)))
+            # Calculate reward and critic estimate
+            reward = torch.Tensor(rewards).reshape(
+                -1, 1
+            ) + self.parser.args.gamma * self.critic_network(
+                torch.Tensor(new_states)
+            ) * torch.tensor(
+                (1 - terminated.reshape(-1, 1))
+            )
             critic_value_est = self.critic_network(torch.Tensor(states))
 
-            #Calculate losses for actor and critic
-            value_loss = self.critic_network.criterion(critic_value_est.clone(), reward.clone())
-            action_loss = -(log_probs.squeeze(0) * (reward - critic_value_est).detach()).sum()
+            # Calculate losses for actor and critic
+            value_loss = self.critic_network.criterion(
+                critic_value_est.clone(), reward.clone()
+            )
+            action_loss = -(
+                log_probs.squeeze(0) * (reward - critic_value_est).detach()
+            ).sum()
 
-            #add entropy
+            # add entropy
             if self.parser.args.entropy:
-                action_loss += 0.5*(entropy.squeeze(0)).sum() #+ appears to work decently or at least better
-            #For debugging purposes
+                action_loss += (
+                    0.5 * (entropy.squeeze(0)).sum()
+                )  # + appears to work decently or at least better
+            # For debugging purposes
             self.value_loss[self.frames] = value_loss.clone().detach().numpy()
             self.action_loss[self.frames] = action_loss.clone().detach().numpy()
 
-            #if np.random.uniform() < 0.001:
+            # if np.random.uniform() < 0.001:
             #    print(f"\t val_loss: {round(self.value_loss[self.frames],2)}, action_loss{round(self.action_loss[self.frames],2)}, rew: {np.round(reward.detach().numpy(),1)}, critic_est {np.round(critic_value_est.detach().numpy(),1)}" )
 
-            #Update networks
-            #Update networks (with or without grad clipping)
+            # Update networks
+            # Update networks (with or without grad clipping)
             self.critic_network.optimizer.zero_grad()
             value_loss.backward(retain_graph=True)
             if self.parser.args.grad_clipping:
-                torch.nn.utils.clip_grad_norm_([p for g in self.critic_network.optimizer.param_groups for p in g["params"]], self.parser.args.grad_clipping)
+                torch.nn.utils.clip_grad_norm_(
+                    [
+                        p
+                        for g in self.critic_network.optimizer.param_groups
+                        for p in g["params"]
+                    ],
+                    self.parser.args.grad_clipping,
+                )
             self.critic_network.optimizer.step()
 
             self.actor_network.optimizer.zero_grad()
             action_loss.backward()
             if self.parser.args.grad_clipping:
-                torch.nn.utils.clip_grad_norm_([p for g in self.critic_network.optimizer.param_groups for p in g["params"]], self.parser.args.grad_clipping)
+                torch.nn.utils.clip_grad_norm_(
+                    [
+                        p
+                        for g in self.critic_network.optimizer.param_groups
+                        for p in g["params"]
+                    ],
+                    self.parser.args.grad_clipping,
+                )
             self.actor_network.optimizer.step()
 
     def follow_policy(self, state):
         state_tensor = torch.from_numpy(state).float()
-        action, log_probs, entropy, info_dict= self.actor_network(state_tensor)
+        action, log_probs, entropy, info_dict = self.actor_network(state_tensor)
 
         if self.continuous:
-            mu = info_dict['mu']
-            sigma_sq = info_dict['sigma_sq']
+            mu = info_dict["mu"]
+            sigma_sq = info_dict["sigma_sq"]
             # For debugging purposes
             self.pred_mu[self.frames] = mu.clone().detach().numpy()
             self.pred_sigma_sq[self.frames] = sigma_sq.clone().detach().numpy()
@@ -253,23 +351,25 @@ class PolicyGradientAgent:
         torch.save(self.actor_network.state_dict(), f"env_lunar.pt")
 
     def evaluate_policy(
-            self,
-            n_frames: int = 2000,
-            learning_algorithm: str = "REINFORCE",
+        self,
+        n_frames: int = 2000,
+        learning_algorithm: str = "REINFORCE",
     ):
         self.set_eval_mode()
-        self.learn_policy(n_frames= n_frames,eval_mode=True, learning_algorithm = learning_algorithm)
+        self.learn_policy(
+            n_frames=n_frames, eval_mode=True, learning_algorithm=learning_algorithm
+        )
 
     def visualize_episode_statistics(
-            self,
-            episodes,
-            eval_mode,
-            frames_in_episodes,
-            n_frames,
-            reward_in_episodes,
-            parser,
+        self,
+        episodes,
+        eval_mode,
+        frames_in_episodes,
+        n_frames,
+        reward_in_episodes,
+        parser,
     ):
-        episodes_to_plot = np.min((100,episodes))
+        episodes_to_plot = np.min((100, episodes))
         periods = np.array_split(frames_in_episodes[:episodes], episodes_to_plot)
         average_steps = [np.mean(period) for period in periods]
         plt.plot(list(range(episodes_to_plot)), average_steps)

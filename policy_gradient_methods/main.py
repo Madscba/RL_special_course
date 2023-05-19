@@ -2,18 +2,20 @@ import gymnasium as gym
 import numpy as np
 import os
 from agents import PolicyGradientAgent
-from models import ActorNetwork_cont,ActorNetwork_disc, CriticNetwork
+from models import ActorNetwork_cont, ActorNetwork_disc, CriticNetwork
 from utils import Parser
 from gymnasium.wrappers import RecordVideo
+
+
 def get_envs(
     env_id: str = "LunarLander-v2",
     num_envs: int = 10,
-    #asynchronous: bool = False,
-    #continuous: bool = True,
-    #gravity: float = -10.0,
-    #enable_wind: bool = False,
-    #wind_power: float = 15.0,
-    #turbulence_power: float = 1.5,
+    # asynchronous: bool = False,
+    # continuous: bool = True,
+    # gravity: float = -10.0,
+    # enable_wind: bool = False,
+    # wind_power: float = 15.0,
+    # turbulence_power: float = 1.5,
 ):
     envs = gym.vector.make(
         id=env_id,
@@ -30,14 +32,14 @@ def get_envs(
 
 if __name__ == "__main__":
     parser = Parser()
-    #set seed
+    # set seed
     np.random.seed(parser.args.seed)
 
     # Init environments
-    envs = get_envs(env_id=parser.args.env_name,num_envs=parser.args.n_environments)
+    envs = get_envs(env_id=parser.args.env_name, num_envs=parser.args.n_environments)
     _ = envs.reset(seed=42)
 
-    #Define the learning algorithm
+    # Define the learning algorithm
     lr_algo = parser.args.learning_algorithm
     n_state = envs.single_observation_space.shape[0]
 
@@ -54,7 +56,7 @@ if __name__ == "__main__":
         n_action = envs.single_action_space.shape[0]
         actor_network = ActorNetwork_cont(
             state_dim=n_state,
-            lr = parser.args.lr/10,
+            lr=parser.args.lr / 10,
             action_dim=n_action,
             envs=envs,
             hidden_dim=parser.args.hidden_size,
@@ -67,16 +69,25 @@ if __name__ == "__main__":
             envs=envs,
             hidden_dim=parser.args.hidden_size,
         )
-        parser.args.n_episodes = parser.args.n_episodes * 100 // parser.args.n_environments
-        agent = PolicyGradientAgent(envs=envs, actor_network=actor_network, critic_network = critic_network, parser=parser)
+        parser.args.n_episodes = (
+            parser.args.n_episodes * 100 // parser.args.n_environments
+        )
+        agent = PolicyGradientAgent(
+            envs=envs,
+            actor_network=actor_network,
+            critic_network=critic_network,
+            parser=parser,
+        )
     else:
         parser.args.n_episodes = parser.args.n_episodes // parser.args.n_environments
-        agent = PolicyGradientAgent(envs=envs, actor_network=actor_network, parser=parser)
+        agent = PolicyGradientAgent(
+            envs=envs, actor_network=actor_network, parser=parser
+        )
     agent.learn_policy(n_frames=parser.args.n_episodes, learning_algorithm=lr_algo)
 
-    #envs.close()
+    # envs.close()
 
-    #env = gym.make(parser.args.env_name, render_mode="rgb_array")
+    # env = gym.make(parser.args.env_name, render_mode="rgb_array")
     # wrapped_env = RecordVideo(
     #     envs,
     #     video_folder=os.getcwd(),

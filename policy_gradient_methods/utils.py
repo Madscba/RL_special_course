@@ -7,10 +7,11 @@ class Parser:
 
         # environment configuration
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLanderContinuous-v2" # "LunarLanderContinuous-v2", CartPole-v1
+            "--env_name",
+            type=str,
+            default="LunarLanderContinuous-v2",  # "LunarLanderContinuous-v2", CartPole-v1
         )
-        self.parser.add_argument(
-            "--visualize", type=bool, default=True)
+        self.parser.add_argument("--visualize", type=bool, default=True)
         self.parser.add_argument(
             "--seed", type=int, default=3, metavar="N", help="random seed (default: 3)"
         )
@@ -31,9 +32,15 @@ class Parser:
         )
 
         # learning algorithm configuration
-        self.parser.add_argument("--learning_algorithm", type=str, default="AC")  # REINFORCE
-        self.parser.add_argument("--entropy", type=bool, default=True,
-                                 help="add entropy regularization to objective to encourage learning")
+        self.parser.add_argument(
+            "--learning_algorithm", type=str, default="AC"
+        )  # REINFORCE
+        self.parser.add_argument(
+            "--entropy",
+            type=bool,
+            default=True,
+            help="add entropy regularization to objective to encourage learning",
+        )
         self.parser.add_argument(
             "--gamma",
             type=float,
@@ -41,7 +48,6 @@ class Parser:
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
-
 
         # network configurations (both actor and critic)
         self.parser.add_argument(
