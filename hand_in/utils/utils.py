@@ -20,7 +20,7 @@ def get_agent(argparser, environments):
         agent = ReinforceAgent(argparser=argparser,action_dim=action_dim,state_dim=state_dim,n_actions=n_actions,action_type=action_type)
         return agent
     elif argparser.args.algorithm == "AC":
-        agent = ACAgent()
+        agent = ACAgent(argparser=argparser,action_dim=action_dim,state_dim=state_dim,n_actions=n_actions,action_type=action_type)
         return agent
     elif argparser.args.algorithm == "SAC":
         agent = SACAgent()
