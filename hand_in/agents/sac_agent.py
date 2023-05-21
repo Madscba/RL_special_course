@@ -32,11 +32,19 @@ class SACAgent(BaseAgent):
     def update_policy(self, states, actions, rewards, new_states, terminated, policy_response_dict:dict):
         log_probs,entropy = policy_response_dict['log_probs'],policy_response_dict['entropy']
 
-        entropy_obj = (self.alpha * log_probs)#(entropy.squeeze(0)).sum())
+        #Step 1 calculate Qvalue losses for the two networks.
+        reward = torch.Tensor(rewards).reshape(-1, 1)
+        entropy_term_objective = (self.alpha * log_probs)#(entropy.squeeze(0)).sum())
+
+        critic_value_prim = self.critic_network_primary(torch.Tensor(states))
+        critic_value_sec = self.critic_network_secondary(torch.Tensor(states))
+
+
+
+
+
         # Calculate reward and critic estimate
-        reward = torch.Tensor(rewards).reshape(-1, 1) + \
              self.gamma * self.critic_network(torch.Tensor(new_states)) * torch.tensor((1 - terminated.reshape(-1, 1)))
-        critic_value_est = self.critic_network(torch.Tensor(states))
 
         # Calculate losses for actor and critic
         value_loss = self.critic_network.criterion(critic_value_est.clone(), reward.clone())
