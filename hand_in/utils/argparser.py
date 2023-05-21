@@ -23,11 +23,11 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument("--algorithm", type=str, default="AC") #DDQN, REINFORCE, AC, SAC
-        self.parser.add_argument("--gamma",type=float,default=0.95,metavar="G",help="discount factor for reward (default: 0.999)")
+        self.parser.add_argument("--gamma",type=float,default=0.99,metavar="G",help="discount factor for reward (default: 0.999)")
 
         # model configurations (both actor and critic)
-        self.parser.add_argument("--hidden_size",type=int,default=32,metavar="N",help="number of episodes (default: 32)")
-        self.parser.add_argument("--lr",type=float,default=0.001,metavar="N",help="learning rate (default: 0.001)")
+        self.parser.add_argument("--hidden_size",type=int,default=256,metavar="N",help="number of episodes (default: 32)")
+        self.parser.add_argument("--lr",type=float,default=0.003,metavar="N",help="learning rate (default: 0.001)")
 
         #algorithm specifics:
         #DQN & DDQN:
@@ -40,5 +40,8 @@ class Parser:
         #AC
         self.parser.add_argument("--grad_clipping",type=float,default=1,metavar="G",help="maximum grad value. If above 0 they are clipped")
         self.parser.add_argument("--entropy",type=bool,default=True,help="add entropy regularization to objective to encourage learning")
+
+        #SAC
+        self.parser.add_argument("--alpha",type=float,default=0.5,help="entropy weight")
 
         self.args = self.parser.parse_args()
