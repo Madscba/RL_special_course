@@ -1,4 +1,6 @@
 import torch
+
+
 class ActorNetwork_cont(torch.nn.Module):
     """Actor network (continuous action space)"""
 
@@ -7,8 +9,8 @@ class ActorNetwork_cont(torch.nn.Module):
         argparser,
         state_dim,
         action_dim,
-        #action_upper_bound: float = 1,
-        #action_lower_bound: float = -1,
+        # action_upper_bound: float = 1,
+        # action_lower_bound: float = -1,
     ):
         super(ActorNetwork_cont, self).__init__()
         self.input_dim = state_dim
@@ -16,8 +18,8 @@ class ActorNetwork_cont(torch.nn.Module):
         self.n_envs = argparser.args.n_env
         self.hidden_dim = argparser.args.n_env
         self.lr = argparser.args.lr
-        #self.action_space_range = action_upper_bound - action_lower_bound
-        #self.action_space_center = self.action_space_range / 2
+        # self.action_space_range = action_upper_bound - action_lower_bound
+        # self.action_space_center = self.action_space_range / 2
         self.continuous = True
 
         self.model = torch.nn.Sequential(
@@ -44,10 +46,14 @@ class ActorNetwork_cont(torch.nn.Module):
 
     def forward(self, x):
         mu = self.model(torch.Tensor(x))
-        sigma_sq = (self.fc(x) + self.std)  # todo consider adding a more mechanism to ensure std to be positive.
+        sigma_sq = (
+            self.fc(x) + self.std
+        )  # todo consider adding a more mechanism to ensure std to be positive.
         sigma_sq = torch.clamp(sigma_sq, 0.1, 5)  # cannot have negative std. dev.
         dist = torch.distributions.Normal(mu, sigma_sq)
         action = dist.sample()
-        entropy = (dist.entropy())  # Corresponds to 0.5 * ((sigma_sq ** 2 * 2 * pi).log() + 1)  # Entropy of gaussian: https://gregorygundersen.com/blog/2020/09/01/gaussian-entropy/
+        entropy = (
+            dist.entropy()
+        )  # Corresponds to 0.5 * ((sigma_sq ** 2 * 2 * pi).log() + 1)  # Entropy of gaussian: https://gregorygundersen.com/blog/2020/09/01/gaussian-entropy/
         log_probs = dist.log_prob(action)
         return action, log_probs, entropy, {"mu": mu, "sigma_sq": sigma_sq}

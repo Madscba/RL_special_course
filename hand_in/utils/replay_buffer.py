@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+
+
 class ReplayBuffer:
     """
     Replay buffer for RL methods. Works for value-based methods where episode information will be saved:
@@ -8,8 +10,16 @@ class ReplayBuffer:
         (reward, action, reward, next_state, terminated, log_probability, entropy)
     a class attribute: self.used_for_policy_gradient_method is used to differentiate between the two cases.
     """
-    def __init__(self, capacity: int = 100000, state_dim: int = 4,action_dim:int = 2, n_actions:int=2,
-                 batch_size: int = 64,used_for_policy_gradient_method:bool=False):
+
+    def __init__(
+        self,
+        capacity: int = 100000,
+        state_dim: int = 4,
+        action_dim: int = 2,
+        n_actions: int = 2,
+        batch_size: int = 64,
+        used_for_policy_gradient_method: bool = False,
+    ):
         self.capacity = capacity
         self.event_idx = 0
         self.state_dim = state_dim
@@ -20,22 +30,25 @@ class ReplayBuffer:
         # ('state','action','reward',next_state','terminated')
         self.batch_size = batch_size
 
-    def initialize_array(self,capacity):
+    def initialize_array(self, capacity):
         if self.used_for_policy_gradient_method:
             return torch.zeros((2 * self.state_dim + 3 * self.n_actions + 2, capacity))
         else:
             return torch.zeros((2 * self.state_dim + self.n_actions + 2, capacity))
-    def save_event(self, state, action, reward, next_state, terminated, policy_response_dict):
+
+    def save_event(
+        self, state, action, reward, next_state, terminated, policy_response_dict
+    ):
         if self.used_for_policy_gradient_method:
-            self.event_tuples[ :, self.event_idx % self.capacity] = torch.hstack(
+            self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
                 (
                     torch.from_numpy(state),
                     torch.from_numpy(action).reshape(-1, self.n_actions),
                     torch.from_numpy(reward.reshape(-1, 1)),
                     torch.from_numpy(next_state),
                     torch.from_numpy(terminated.reshape(-1, 1)),
-                    policy_response_dict['log_probs'].reshape(-1, self.n_actions),
-                    policy_response_dict['entropy'].reshape(-1, self.n_actions),
+                    policy_response_dict["log_probs"].reshape(-1, self.n_actions),
+                    policy_response_dict["entropy"].reshape(-1, self.n_actions),
                 )
             )
         else:
@@ -59,17 +72,24 @@ class ReplayBuffer:
                 np.min([self.event_idx, self.capacity]), self.batch_size, replace=False
             )
             return self.event_tuples[:, sample_idx]
+
     def get_episode_hist(self):
         """get the all steps info so far saved in replay buffer"""
-        return self.event_tuples[ :, : self.event_idx]
+        return self.event_tuples[:, : self.event_idx]
+
     def reset(self):
         self.event_idx = 0
         self.event_tuples = self.initialize_array(capacity=1005)
 
-    def get_latest_termination_state_and_check_for_max_episode_length(self,max_steps_in_episode:int=1000):
-        """ For REINFORCE we want to update model, if we have finished an episode either by having naturally
+    def get_latest_termination_state_and_check_for_max_episode_length(
+        self, max_steps_in_episode: int = 1000
+    ):
+        """For REINFORCE we want to update model, if we have finished an episode either by having naturally
         terminated, or having reached the maximum allowed amount of steps."""
         if self.used_for_policy_gradient_method:
-            return self.event_tuples[-1-2*self.n_actions, self.event_idx - 1] or self.event_idx >= 1000
+            return (
+                self.event_tuples[-1 - 2 * self.n_actions, self.event_idx - 1]
+                or self.event_idx >= 1000
+            )
         else:
             return self.event_tuples[:, self.event_idx - 1] or self.event_idx >= 1000

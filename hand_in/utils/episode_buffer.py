@@ -44,7 +44,6 @@ class EpisodeBuffer:
     def get_episode_hist(self):
         return self.event_tuples[:, :, : self.event_idx]
 
-
     def get_batch_of_events(self):
         if self.event_idx >= self.batch_size:
             sample_idx = np.random.choice(

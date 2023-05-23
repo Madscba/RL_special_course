@@ -1,4 +1,4 @@
-#A class implementing the Deep Q-Network (DQN) agent.
+# A class implementing the Deep Q-Network (DQN) agent.
 import copy
 import numpy as np
 import torch
@@ -8,11 +8,18 @@ from hand_in.utils.replay_buffer import ReplayBuffer
 from hand_in.models.dqn_model import DQNetwork
 from hand_in.environment.gym_environment import get_envs
 
+
 class DQNAgent(BaseAgent):
-    def __init__(self,argparser,use_DDQN:bool,state_dim:int, action_dim:int, n_actions: int):
-        self.DQN = DQNetwork(argparser=argparser,state_dim=state_dim, action_dim=action_dim)
+    def __init__(
+        self, argparser, use_DDQN: bool, state_dim: int, action_dim: int, n_actions: int
+    ):
+        self.DQN = DQNetwork(
+            argparser=argparser, state_dim=state_dim, action_dim=action_dim
+        )
         if use_DDQN:
-            self.target_DQN = DQNetwork(argparser=argparser,state_dim=state_dim, action_dim=action_dim)
+            self.target_DQN = DQNetwork(
+                argparser=argparser, state_dim=state_dim, action_dim=action_dim
+            )
         self.eps = argparser.args.eps
         self.eps_decay = argparser.args.eps_decay
         self.min_eps = argparser.args.min_eps
@@ -20,20 +27,28 @@ class DQNAgent(BaseAgent):
         self.batch_size = argparser.args.batch_size
         self.use_replay = argparser.args.use_replay
         if self.use_replay:
-            self.replay_buffer = ReplayBuffer(batch_size=self.batch_size, state_dim=self.DQN.input_dim,n_actions = n_actions)
-        self.sample_env,_ = get_envs(env_id=argparser.args.env_name, num_envs=1) #Used to sample random actions
+            self.replay_buffer = ReplayBuffer(
+                batch_size=self.batch_size,
+                state_dim=self.DQN.input_dim,
+                n_actions=n_actions,
+            )
+        self.sample_env, _ = get_envs(
+            env_id=argparser.args.env_name, num_envs=1
+        )  # Used to sample random actions
 
     def initialize_policy(self):
         pass
-    def update_policy(self, state, action, reward, new_state, terminated,empty_dict:dict={}):
+
+    def update_policy(
+        self, state, action, reward, new_state, terminated, empty_dict: dict = {}
+    ):
         if not self.use_replay:
             self.update_DQN(state, action, reward, new_state, terminated)
         else:
             self.update_DQN_replay()
 
-
-    def follow_policy(self,state):
-        """ eps-greedy policy"""
+    def follow_policy(self, state):
+        """eps-greedy policy"""
         if np.random.random() < self.eps:
             action = self.sample_env.action_space.sample()
         else:
@@ -46,10 +61,13 @@ class DQNAgent(BaseAgent):
     def load_models(self):
         pass
 
-
     def update_DQN(self, state, action, reward, new_state, terminated):
-
-        q_target = reward + (1-terminated) * self.gamma * torch.max(self.DQN.predict(new_state)).item()
+        q_target = (
+            reward
+            + (1 - terminated)
+            * self.gamma
+            * torch.max(self.DQN.predict(new_state)).item()
+        )
         q_values_grad = self.DQN(state).squeeze()[action]
 
         loss = self.DQN.criterion(q_values_grad, torch.Tensor(q_target))
@@ -72,11 +90,28 @@ class DQNAgent(BaseAgent):
             # Fetch events
             event_tuples = self.replay_buffer.get_batch_of_events()
             states, actions, rewards, new_states, terminated = (
-                event_tuples[:state_dim, :], #states
-                event_tuples[state_dim : state_dim + self.replay_buffer.n_actions, :], #actions
-                event_tuples[state_dim + self.replay_buffer.n_actions : state_dim+self.replay_buffer.n_actions+1, :], #reward
-                event_tuples[state_dim+self.replay_buffer.n_actions+1:2*state_dim + self.replay_buffer.n_actions+1, :], #next state
-                event_tuples[2*state_dim + self.replay_buffer.n_actions+1, :], #terminated
+                event_tuples[:state_dim, :],  # states
+                event_tuples[
+                    state_dim : state_dim + self.replay_buffer.n_actions, :
+                ],  # actions
+                event_tuples[
+                    state_dim
+                    + self.replay_buffer.n_actions : state_dim
+                    + self.replay_buffer.n_actions
+                    + 1,
+                    :,
+                ],  # reward
+                event_tuples[
+                    state_dim
+                    + self.replay_buffer.n_actions
+                    + 1 : 2 * state_dim
+                    + self.replay_buffer.n_actions
+                    + 1,
+                    :,
+                ],  # next state
+                event_tuples[
+                    2 * state_dim + self.replay_buffer.n_actions + 1, :
+                ],  # terminated
             )
 
             # Calculate q_values
@@ -114,8 +149,10 @@ class DQNAgent(BaseAgent):
                     self.target_DQN = copy.deepcopy(self.DQN)
                     print("copied weights. Loss:", loss)
                     # self.target_DQN.load_state_dict(self.DQN.state_dict())
+
     def uses_replay_buffer(self):
         return self.use_replay
+
     def learn_policy(self, n_frames: int = 10000, eval_mode: bool = False):
         reward_in_episodes = np.zeros(10000, dtype=float)
         frames_in_episodes = np.zeros(10000, dtype=int)

@@ -1,6 +1,8 @@
 import torch
+
+
 class DQNetwork(torch.nn.Module):
-    def __init__(self,argparser,state_dim,action_dim):
+    def __init__(self, argparser, state_dim, action_dim):
         super(DQNetwork, self).__init__()
         self.input_dim = state_dim
         self.output_dim = action_dim
@@ -14,7 +16,9 @@ class DQNetwork(torch.nn.Module):
 
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.model.parameters(), argparser.args.lr)
-        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
+        self.scheduler = torch.optim.lr_scheduler.ExponentialLR(
+            self.optimizer, gamma=0.99
+        )
 
     def forward(self, x):
         return self.model(torch.Tensor(x))

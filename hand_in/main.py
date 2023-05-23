@@ -1,4 +1,4 @@
-#main.py serves as the entry point for running your RL experiments. It can handle argument parsing, instantiate agents and environments, and orchestrate the training or evaluation process.
+# main.py serves as the entry point for running your RL experiments. It can handle argument parsing, instantiate agents and environments, and orchestrate the training or evaluation process.
 from tqdm import tqdm
 import numpy as np
 from hand_in.utils.argparser import Parser
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     e, state = get_envs(env_id=p.args.env_name, num_envs=p.args.n_env)
     print(e)
     l = get_logger(p)
-    a = get_agent(p,e)
+    a = get_agent(p, e)
 
     #################
     # for each episode
@@ -24,9 +24,13 @@ if __name__ == "__main__":
         new_state, reward, terminated, truncated, info = e.step(action)
         # Save history (replay buffer) - not needed for DQN
         if a.uses_replay_buffer():
-            a.replay_buffer.save_event(state, action, reward, new_state, terminated, policy_response_dict)
+            a.replay_buffer.save_event(
+                state, action, reward, new_state, terminated, policy_response_dict
+            )
 
-        a.update_policy(state, action, reward, new_state, terminated,policy_response_dict)
+        a.update_policy(
+            state, action, reward, new_state, terminated, policy_response_dict
+        )
         state = new_state
 
         l.log_step(reward)
