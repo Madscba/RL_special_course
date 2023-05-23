@@ -47,21 +47,25 @@ class SACAgent(BaseAgent):
 
         #### Update Q function networks
         # find minimum of target networks
-        critic_value_target_min = torch.min(self.critic_target_secondary(state_action_tensor),
-                                            self.critic_target_secondary(state_action_tensor)
-                                            )
-        reward = torch.Tensor(rewards).reshape(-1, 1)
-        entropy_term_objective = (self.alpha * log_probs)#(entropy.squeeze(0)).sum())
+        with torch.no_grad():
+            actions_next, policy_response_dict_next = a.follow_policy(state)
+            new_state_action_tensor = torch.Tensor(np.vstack((new_states,actions_next)))
+            critic_value_target_min = torch.min(self.critic_target_secondary(new_state_action_tensor),
+                                                self.critic_target_secondary(new_state_action_tensor)
+                                                )
+            reward = torch.Tensor(rewards).reshape(-1, 1)
+            print("Check if log_probs_next should be indexed by the next action taken")
+            entropy_term_objective_next = (self.alpha * policy_response_dict_next['log_probs'])#(entropy.squeeze(0)).sum())
+            # add terms together eq 6 from SAC paper:
+            critic_target = reward + self.gamma * (critic_value_target_min * torch.tensor((1 - terminated.reshape(-1, 1)))
+                                                   - entropy_term_objective_next)
 
-        # add terms together eq 6 from SAC paper:
-        critic_target = reward + self.gamma * (critic_value_target_min * torch.tensor((1 - terminated.reshape(-1, 1)))
-                                               - entropy_term_objective)
 
         critic_value_prim = self.critic_primary(state_action_tensor)
         critic_value_sec = self.critic_secondary(state_action_tensor)
 
-        value_loss_prim = self.critic_network.criterion(critic_value_prim, critic_target)
-        value_loss_sec = self.critic_network.criterion(critic_value_sec, critic_target)
+        value_loss_prim = self.critic_primary.criterion(critic_value_prim, critic_target)
+        value_loss_sec = self.critic_secondary.criterion(critic_value_sec, critic_target)
 
         self.critic_primary.optimizer.zero_grad()
         self.critic_secondary.optimizer.zero_grad()
@@ -83,10 +87,11 @@ class SACAgent(BaseAgent):
 
 
         #### Update actor networks
-        print("check if log_probs.squeeze is needed")
-        first_term = self.alpha * log_probs.squeeze(0)
-        second_term = (self.alpha * log_probs.squeeze(0) - critic_value_target_min)
-        action_loss = first_term + second_term
+        entropy_term_objective_next = (self.alpha * policy_response_dict['log_probs'])  # (entropy.squeeze(0)).sum())
+        critic_value_min = torch.min(self.critic_primary(state_action_tensor),
+                                     self.critic_secondary(state_action_tensor))
+        print("check if log_probs.squeeze is needed and action index")
+        action_loss = (entropy_term_objective_next - critic_value_min)
         self.actor_network.optimizer.zero_grad()
         action_loss.backward()
         # if self.parser.args.grad_clipping:
@@ -95,7 +100,10 @@ class SACAgent(BaseAgent):
         #         self.parser.args.grad_clipping,)
         self.actor_network.optimizer.step()
 
-        #### Update Q function target networks
+        #Update alpha:
+
+
+        #### Update Q function target networks with exponentially moving average:
         for param, target_param in zip(self.critic_primary.parameters(), self.critic_target_primary.parameters()):
             target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
