@@ -5,6 +5,7 @@ from hand_in.environment.gym_environment import get_environment_info
 from hand_in.agents.dqn_agent import DQNAgent
 from hand_in.agents.reinforce_agent import ReinforceAgent
 from hand_in.agents.actor_critic_agent import ACAgent
+from hand_in.agents.sac_agent import SACAgent
 
 
 def get_agent(argparser, environments):
@@ -49,7 +50,11 @@ def get_agent(argparser, environments):
         )
         return agent
     elif argparser.args.algorithm == "SAC":
-        agent = SACAgent()
+        agent = SACAgent(argparser=argparser,
+            action_dim=action_dim,
+            state_dim=state_dim,
+            n_actions=n_actions,
+            action_type=action_type,)
         return agent
     else:
         raise Exception(f"{argparser.args.algorithm}-agent is currently not supported")

@@ -25,7 +25,7 @@ class Parser:
         self.parser.add_argument(
             "--frame_interval",
             type=int,
-            default="1000",
+            default=2000,
             help="'file' saves .csv, 'console' prints to terminal. 'default' does both",
         )
         self.parser.add_argument(
@@ -51,7 +51,7 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="AC"
+            "--algorithm", type=str, default="SAC"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
@@ -65,14 +65,14 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=256,
+            default=64,
             metavar="N",
             help="number of episodes (default: 32)",
         )
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.003,
+            default=0.001,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -97,7 +97,7 @@ class Parser:
         self.parser.add_argument(
             "--batch_size",
             type=int,
-            default=64,
+            default=256,
         )
         self.parser.add_argument("--use_replay", type=bool, default=True)
 
@@ -105,7 +105,7 @@ class Parser:
         self.parser.add_argument(
             "--grad_clipping",
             type=float,
-            default=1,
+            default=0,
             metavar="G",
             help="maximum grad value. If above 0 they are clipped",
         )
@@ -118,10 +118,13 @@ class Parser:
 
         # SAC
         self.parser.add_argument(
-            "--alpha", type=float, default=0.5, help="entropy weight"
+            "--alpha", type=float, default=0.2, help="entropy weight"
         )
         self.parser.add_argument(
-            "--tau", type=float, default=0.005, help="exponential moving average constant"
+            "--tau",
+            type=float,
+            default=0.005,
+            help="exponential moving average constant",
         )
 
         self.args = self.parser.parse_args()

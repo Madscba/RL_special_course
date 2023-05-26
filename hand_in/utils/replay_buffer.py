@@ -20,13 +20,13 @@ class ReplayBuffer:
         batch_size: int = 64,
         used_for_policy_gradient_method: bool = False,
     ):
-        self.capacity = capacity
+        self.capacity = int(capacity)
         self.event_idx = 0
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.n_actions = n_actions
         self.used_for_policy_gradient_method = used_for_policy_gradient_method
-        self.event_tuples = self.initialize_array(capacity)
+        self.event_tuples = self.initialize_array(self.capacity)
         # ('state','action','reward',next_state','terminated')
         self.batch_size = batch_size
 
@@ -47,8 +47,8 @@ class ReplayBuffer:
                     torch.from_numpy(reward.reshape(-1, 1)),
                     torch.from_numpy(next_state),
                     torch.from_numpy(terminated.reshape(-1, 1)),
-                    policy_response_dict["log_probs"].reshape(-1, self.n_actions),
-                    policy_response_dict["entropy"].reshape(-1, self.n_actions),
+                    policy_response_dict["log_probs"].reshape(-1, self.n_actions).detach(),
+                    policy_response_dict["entropy"].reshape(-1, self.n_actions).detach(),
                 )
             )
         else:
@@ -61,7 +61,7 @@ class ReplayBuffer:
                     torch.from_numpy(terminated.reshape(-1, 1)),
                 )
             )
-            if self.event_idx % 100000 == 0:
+            if self.event_idx % self.capacity == 0:
                 print("starting new buffer")
         self.event_idx += 1
 

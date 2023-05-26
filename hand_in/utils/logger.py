@@ -119,7 +119,7 @@ class RLLogger:
         plt.subplots_adjust(bottom=0.3)
         plt.xlabel("Episode")
         plt.ylabel("Average Reward pr. {} frames".format(self.frame_interval))
-        plt.title("Reward Progress")
+        plt.title(f"Reward Progress \n{self.run_name}")
         x_max = np.max(avg_rewards)
         y_max = np.where(avg_rewards == x_max)[0][0]
         plt.scatter(
