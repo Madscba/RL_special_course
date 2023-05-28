@@ -25,7 +25,7 @@ class Parser:
         self.parser.add_argument(
             "--frame_interval",
             type=int,
-            default=2000,
+            default=10000,
             help="'file' saves .csv, 'console' prints to terminal. 'default' does both",
         )
         self.parser.add_argument(
@@ -65,7 +65,7 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=64,
+            default=256,
             metavar="N",
             help="number of episodes (default: 32)",
         )
@@ -123,7 +123,7 @@ class Parser:
         self.parser.add_argument(
             "--tau",
             type=float,
-            default=0.005,
+            default=0.01,
             help="exponential moving average constant",
         )
 

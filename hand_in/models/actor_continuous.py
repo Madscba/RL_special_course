@@ -47,9 +47,7 @@ class ActorNetwork_cont(torch.nn.Module):
 
     def forward(self, x):
         mu = self.model(torch.Tensor(x))
-        log_sigma_sq = (
-            self.fc(x) + self.log_std
-        )  # todo consider adding a more mechanism to ensure std to be positive.
+        log_sigma_sq = (self.fc(x) + self.log_std)
         log_sigma_sq = torch.clamp(log_sigma_sq, -20, 2)
         sigma_sq = torch.exp(log_sigma_sq)
         dist = torch.distributions.Normal(mu, sigma_sq)
