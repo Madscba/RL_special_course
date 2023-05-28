@@ -56,7 +56,7 @@ class Parser:
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.99,
+            default=0.995,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -65,9 +65,9 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=256,
+            default=128,
             metavar="N",
-            help="number of episodes (default: 32)",
+            help="number of hidden units (default: 32)",
         )
         self.parser.add_argument(
             "--lr",
@@ -123,7 +123,7 @@ class Parser:
         self.parser.add_argument(
             "--tau",
             type=float,
-            default=0.01,
+            default=0.001,
             help="exponential moving average constant",
         )
 

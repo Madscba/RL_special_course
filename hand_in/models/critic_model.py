@@ -17,9 +17,7 @@ class CriticNetwork(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.Linear(self.hidden_dim, 1),
         )
-        self.optimizer = torch.optim.Adam(
-            self.parameters(), lr=argparser.args.lr, weight_decay=1e-5
-        )
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=argparser.args.lr)
         self.criterion = torch.nn.MSELoss()  # MSELoss()
 
     def forward(self, x):

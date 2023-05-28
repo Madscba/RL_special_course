@@ -25,7 +25,7 @@ class SACAgent(BaseAgent):
         self.n_actions = n_actions
         self.gamma = argparser.args.gamma
         self.tau = argparser.args.tau
-        self.log_alpha = torch.tensor(np.log(torch.zeros(1,dtype=torch.float32)),dtype=torch.float32, requires_grad=True) #We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
+        self.log_alpha = torch.tensor(np.log(torch.tensor(argparser.args.alpha,dtype=torch.float32)),dtype=torch.float32, requires_grad=True) #We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
         self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.parser.args.lr)
         self.target_entropy = torch.tensor(-action_dim,dtype=torch.float32, requires_grad=True)
         self.critic_primary = CriticNetwork(
@@ -42,8 +42,22 @@ class SACAgent(BaseAgent):
             n_actions=n_actions,
             action_type=action_type,
         )
-        self.critic_target_primary = self.initialize_target(self.critic_primary)
-        self.critic_target_secondary = self.initialize_target(self.critic_secondary)
+        self.critic_target_primary = CriticNetwork(
+            argparser=argparser,
+            input_dim=state_dim + n_actions,
+            output_dim=1,
+            n_actions=n_actions,
+            action_type=action_type,
+        )
+        self.critic_target_secondary = CriticNetwork(
+            argparser=argparser,
+            input_dim=state_dim + n_actions,
+            output_dim=1,
+            n_actions=n_actions,
+            action_type=action_type,
+        )
+        #self.critic_target_primary = self.initialize_target(self.critic_primary)
+        #self.critic_target_secondary = self.initialize_target(self.critic_secondary)
         self.actor_network = self.init_actor_network(
             argparser, action_dim, state_dim, n_actions, action_type
         )
@@ -56,11 +70,11 @@ class SACAgent(BaseAgent):
             batch_size=argparser.args.batch_size
         )
 
-    def initialize_target(self, network_to_be_copied):
-        target_network = copy.deepcopy(network_to_be_copied)
-        for p in target_network.parameters():
-            p.requires_grad = False
-        return target_network
+    # def initialize_target(self, network_to_be_copied):
+    #     target_network = copy.deepcopy(network_to_be_copied)
+    #     for p in target_network.parameters():
+    #         p.requires_grad = False
+    #     return target_network
 
     def update_policy(
         self,
@@ -132,10 +146,10 @@ class SACAgent(BaseAgent):
         action_loss = losses['action_loss']
         self.actor_network.optimizer.zero_grad()
         action_loss.backward()
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [p for g in self.actor_network.optimizer.param_groups for p in g["params"]],
-        #         self.parser.args.grad_clipping,)
+        if self.parser.args.grad_clipping:
+            torch.nn.utils.clip_grad_norm_(
+                [p for g in self.actor_network.optimizer.param_groups for p in g["params"]],
+                self.parser.args.grad_clipping,)
         self.actor_network.optimizer.step()
 
         # for params in self.critic_primary.parameters():
@@ -156,24 +170,24 @@ class SACAgent(BaseAgent):
         value_loss_sec.backward()
 
 
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [
-        #             p
-        #             for g in self.critic_primary.optimizer.param_groups
-        #             for p in g["params"]
-        #         ],
-        #         self.parser.args.grad_clipping,
-        #     )
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [
-        #             p
-        #             for g in self.critic_secondary.optimizer.param_groups
-        #             for p in g["params"]
-        #         ],
-        #         self.parser.args.grad_clipping,
-        #     )
+        if self.parser.args.grad_clipping:
+            torch.nn.utils.clip_grad_norm_(
+                [
+                    p
+                    for g in self.critic_primary.optimizer.param_groups
+                    for p in g["params"]
+                ],
+                self.parser.args.grad_clipping,
+            )
+        if self.parser.args.grad_clipping:
+            torch.nn.utils.clip_grad_norm_(
+                [
+                    p
+                    for g in self.critic_secondary.optimizer.param_groups
+                    for p in g["params"]
+                ],
+                self.parser.args.grad_clipping,
+            )
 
         self.critic_primary.optimizer.step()
         self.critic_secondary.optimizer.step()
