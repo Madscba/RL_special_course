@@ -2,7 +2,7 @@
 from tqdm import tqdm
 import numpy as np
 from hand_in.utils.argparser import Parser
-from hand_in.utils.utils import set_seed
+from hand_in.utils.utils import set_seed, evaluate_agent
 from hand_in.environment.gym_environment import get_envs
 from hand_in.utils.logger import get_logger
 from hand_in.utils.utils import get_agent
@@ -11,10 +11,10 @@ if __name__ == "__main__":
     p = Parser()
     set_seed(p.args.seed)
 
-    ##
-    for alpha in np.linspace(0.1,1,3):
+    #
+    for alpha in np.linspace(0.1,1,2):
         for tau in [0.05, 0.005]:
-            for gamma in [0.95,0.99,0.995]:
+            for gamma in [0.95,0.99,0.995][::-1]:
                 for lr in [0.0003, 0.003]:  # lr
                     p.args.lr = lr
                     p.args.alpha = alpha
@@ -37,7 +37,13 @@ if __name__ == "__main__":
                         # Follow policy:
                         action, policy_response_dict = a.follow_policy(state)
                         # take action A and observe rew, new_state
-                        new_state, reward, terminated, truncated, info = e.step(action)
+                        try:
+                            new_state, reward, terminated, truncated, info = e.step(action)
+                        except Exception as inst:
+                            print(type(inst))  # the exception type
+                            print(inst.args)  # arguments stored in .args
+                            print(inst)
+                            abc = 2
                         # Save history (replay buffer) - not needed for DQN
                         if a.uses_replay_buffer():
                             a.replay_buffer.save_event(
@@ -55,6 +61,8 @@ if __name__ == "__main__":
                             state, _ = e.reset()
                             terminated = False
                             l.log_episode()
+                        if frame_count % (p.args.n_steps//20) == 0 and (p.args.n_steps/1.25) < frame_count:
+                            evaluate_agent(a, p.args.env_name, num_episodes=2, render=True)
 
                     l.plot_epi_rewards()
                     l.plot_step_rewards()

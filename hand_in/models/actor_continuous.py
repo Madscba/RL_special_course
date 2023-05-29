@@ -62,10 +62,10 @@ class ActorNetwork_cont(torch.nn.Module):
 
         log_probs = dist.log_prob(pre_tanh_value)
 
-        correction_log_prob = - 2. * (
-                torch.tensor(0.69314718,dtype=torch.float32) #torch.from_numpy(np.log[2.])
-                - pre_tanh_value
-                - torch.nn.functional.softplus(-2. * pre_tanh_value)
-        )
+        # correction_log_prob = - 2. * (
+        #         torch.tensor(0.69314718,dtype=torch.float32) #torch.from_numpy(np.log[2.])
+        #         - pre_tanh_value
+        #         - torch.nn.functional.softplus(-2. * pre_tanh_value)
+        # )
 
-        return action, log_probs + correction_log_prob, entropy, {"mu": mu, "sigma_sq": sigma_sq}
+        return action, log_probs , entropy, {"mu": mu, "sigma_sq": sigma_sq}

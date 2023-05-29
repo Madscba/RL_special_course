@@ -94,7 +94,7 @@ class SACAgent(BaseAgent):
         else:
             if self.replay_buffer.event_idx % (self.replay_buffer.batch_size * 10) == 0:
                 print(
-                    f"alpha: {self.log_alpha.exp()}, mu: {policy_response_dict['mu']}, std: {policy_response_dict['sigma_sq']}, log_probs: {policy_response_dict['sigma_sq']}, entropy: {policy_response_dict['entropy']}")
+                    f" mu: {policy_response_dict['mu']}, std: {policy_response_dict['sigma_sq']}, log_probs: {policy_response_dict['sigma_sq']}, entropy: {policy_response_dict['entropy']}") #alpha: {self.log_alpha.exp()},
 
         event_tuples = self.replay_buffer.get_batch_of_events()
         states, actions, rewards, new_states, terminated = (
@@ -129,9 +129,9 @@ class SACAgent(BaseAgent):
 
         alpha_loss = losses["alpha_loss"]
 
-        self.alpha_optim.zero_grad()
-        alpha_loss.backward()
-        self.alpha_optim.step()
+        # self.alpha_optim.zero_grad()
+        # alpha_loss.backward()
+        # self.alpha_optim.step()
         #self.alpha = self.log_alpha.exp()
 
         state_action_tensor = torch.Tensor(torch.vstack((states, actions))).T.unsqueeze(1)

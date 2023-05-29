@@ -1,5 +1,8 @@
 import numpy as np
 import torch
+import gym
+from gym.wrappers import Monitor
+import matplotlib.pyplot as plt
 
 from hand_in.environment.gym_environment import get_environment_info
 from hand_in.agents.dqn_agent import DQNAgent
@@ -59,6 +62,39 @@ def get_agent(argparser, environments):
     else:
         raise Exception(f"{argparser.args.algorithm}-agent is currently not supported")
 
+
+def evaluate_agent(agent, env_name, num_episodes=1, render=True):
+    env = gym.make(env_name)
+    env = Monitor(env, './results/temporary/video', force=True)  # Create video recording wrapper
+
+    episode_rewards = []
+
+    for episode in range(num_episodes):
+        episode_reward = 0
+        observation = env.reset()
+
+        done = False
+        while not done:
+            if render:
+                env.render()
+
+            action,_ = agent.follow_policy(observation)
+            next_observation, reward, done, _ = env.step(action.squeeze())
+
+            episode_reward += reward
+            observation = next_observation
+
+        episode_rewards.append(episode_reward)
+        print(f"Episode {episode + 1}: Reward = {episode_reward}")
+
+    env.close()
+
+    # Plot rewards
+    plt.plot(episode_rewards)
+    plt.xlabel('Episode')
+    plt.ylabel('Reward')
+    plt.title('Agent Evaluation')
+    plt.show()
 
 def set_seed(seed: int = 3):
     np.random.seed(seed)

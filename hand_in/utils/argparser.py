@@ -25,7 +25,7 @@ class Parser:
         self.parser.add_argument(
             "--frame_interval",
             type=int,
-            default=10000,
+            default=5000,
             help="'file' saves .csv, 'console' prints to terminal. 'default' does both",
         )
         self.parser.add_argument(
@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=200000,
+            default=100000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -65,7 +65,7 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=128,
+            default=256,
             metavar="N",
             help="number of hidden units (default: 32)",
         )
@@ -87,17 +87,17 @@ class Parser:
         self.parser.add_argument(
             "--eps_decay",
             type=float,
-            default=0.001,
+            default=0.0005, #0.001
         )
         self.parser.add_argument(
             "--min_eps",
             type=float,
-            default=0.05,
+            default=0.1, #0.05
         )
         self.parser.add_argument(
             "--batch_size",
             type=int,
-            default=256,
+            default=32,
         )
         self.parser.add_argument("--use_replay", type=bool, default=True)
 
@@ -105,7 +105,7 @@ class Parser:
         self.parser.add_argument(
             "--grad_clipping",
             type=float,
-            default=0,
+            default=0.5,
             metavar="G",
             help="maximum grad value. If above 0 they are clipped",
         )
