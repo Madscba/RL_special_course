@@ -103,44 +103,45 @@ class SACAgent(BaseAgent):
                     f" mu: {policy_response_dict['mu']}, std: {policy_response_dict['sigma_sq']}, log_probs: {policy_response_dict['sigma_sq']}, entropy: {policy_response_dict['entropy']}") #alpha: {self.log_alpha.exp()},
 
         event_tuples = self.replay_buffer.get_batch_of_events()
-        actions, new_states, rewards, states, terminated = self.event_tuple_to_tensors(event_tuples)
+        states, actions, rewards, new_states, terminated = self.event_tuple_to_tensors(event_tuples)
 
         # losses = self.compute_losses(states, actions, rewards, new_states, terminated)
 
         #### Update Q function networks #####
         actions_next, policy_response_dict_next = self.follow_policy(new_states.T.unsqueeze(1), reparameterize=False)
-        log_probs_next = policy_response_dict_next["log_probs"]
+        log_probs_next = policy_response_dict_next['log_probs'].sum(2,keepdim=True).squeeze(1)
         new_state_action_tensor = torch.hstack(
             (new_states.T, torch.Tensor(actions_next).reshape(self.replay_buffer.batch_size, -1).to(
                 self.actor_network.device))).unsqueeze(1)
         critic_value_target_min = torch.min(
-            self.critic_target_secondary(new_state_action_tensor),
+            self.critic_target_primary(new_state_action_tensor),
             self.critic_target_secondary(new_state_action_tensor),
         )
         reward = torch.Tensor(rewards).reshape(-1, 1)
 
-        critic_target = self.reward_scale * reward + self.gamma * torch.tensor(1 - terminated.reshape(-1, 1)) * (
-                critic_value_target_min.squeeze(1) - (self.log_alpha.exp() * log_probs_next).mean(axis=2))
+        critic_target = self.reward_scale * reward + self.gamma * torch.tensor(1 - terminated.reshape(-1, 1)) * \
+                        (critic_value_target_min.squeeze(1) - (self.log_alpha.exp() * log_probs_next))
+        critic_target = critic_target.mean(axis=0)
         # add .mean(axis=2) (log_alpha.exp * log_probs)?
 
         state_action_tensor = torch.Tensor(torch.vstack((states, actions))).T.unsqueeze(1)
-        critic_value_prim = self.critic_primary(state_action_tensor.clone().detach())
-        critic_value_sec = self.critic_secondary(state_action_tensor.clone().detach())
+        critic_value_prim = self.critic_primary(state_action_tensor)
+        critic_value_sec = self.critic_secondary(state_action_tensor)
 
-        value_loss_prim = 0.5 * self.critic_primary.criterion(
-            critic_value_prim.squeeze(2), critic_target
+        value_loss_prim = self.critic_primary.criterion(
+            critic_value_prim.squeeze(), critic_target
         )
-        value_loss_sec = 0.5 * self.critic_secondary.criterion(
-            critic_value_sec.squeeze(2), critic_target
+        value_loss_sec = self.critic_secondary.criterion(
+            critic_value_sec.squeeze(), critic_target
         )
 
         self.critic_primary.optimizer.zero_grad()
         self.critic_secondary.optimizer.zero_grad()
 
-        value_losses = value_loss_prim + value_loss_sec
-        value_losses.backward()
-        # value_loss_prim.backward()
-        # value_loss_sec.backward()
+        # value_losses = value_loss_prim + value_loss_sec
+        # value_losses.backward()
+        value_loss_prim.backward(retain_graph=True)
+        value_loss_sec.backward()
 
         # if self.parser.args.grad_clipping:
         #     torch.nn.utils.clip_grad_norm_(
@@ -171,19 +172,15 @@ class SACAgent(BaseAgent):
         #     params.requires_grad = False
         # for params in self.critic_secondary.parameters():
         #     params.requires_grad = False
-        new_obs_actions, policy_response_dict = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
-        log_probs = policy_response_dict['log_probs'].unsqueeze(-1)
-        alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy)).mean()
+        new_obs_actions, policy_response_dict_ = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
+        log_probs = policy_response_dict_['log_probs'].sum(2,keepdim=True).squeeze(1)
 
-        state_new_obs_action_tensor = torch.hstack((states.T.clone(),
-                                                    torch.Tensor(new_obs_actions).reshape(self.replay_buffer.batch_size,
-                                                                                          -1).to(
-                                                        self.actor_network.device))).unsqueeze(1)
+        state_new_obs_action_tensor = torch.vstack((states,torch.Tensor(new_obs_actions).reshape(-1,self.replay_buffer.batch_size))).T.unsqueeze(1)
         critic_value_min = torch.min(
             self.critic_primary(state_new_obs_action_tensor),
             self.critic_secondary(state_new_obs_action_tensor),
-        )
-        action_loss = (self.log_alpha.exp() * log_probs - critic_value_min.clone()).mean()
+        ).squeeze(1)
+        action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
 
         # action_loss = losses['action_loss']
         self.actor_network.optimizer.zero_grad()
@@ -205,10 +202,14 @@ class SACAgent(BaseAgent):
         # Update alpha:
         # alpha_loss = losses["alpha_loss"]
         # print("alpha is not being updated")
-        # self.alpha_optim.zero_grad()
-        # alpha_loss.backward()
-        # self.alpha_optim.step()
-        # self.alpha = self.log_alpha.exp()
+        new_obs_actions, policy_response_dict = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
+        log_probs = policy_response_dict['log_probs'].sum(2,keepdim=True).squeeze(1)
+        alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy)).mean(0)
+
+        self.alpha_optim.zero_grad()
+        alpha_loss.backward()
+        self.alpha_optim.step()
+        self.alpha = self.log_alpha.exp()
 
 
         #### Update Q function target networks with exponentially moving average:
@@ -253,7 +254,7 @@ class SACAgent(BaseAgent):
         states, actions, rewards, new_states, terminated = states.to(self.actor_network.device), actions.to(
             self.actor_network.device), rewards.to(self.actor_network.device), new_states.to(
             self.actor_network.device), terminated.to(self.actor_network.device)
-        return actions, new_states, rewards, states, terminated
+        return states, actions, rewards, new_states, terminated
 
     def follow_policy(self, state, reparameterize=False):
         if not isinstance(state,torch.Tensor):
@@ -304,8 +305,8 @@ class SACAgent(BaseAgent):
         # add .mean(axis=2) (log_alpha.exp * log_probs)?
 
         state_action_tensor = torch.Tensor(torch.vstack((states, actions))).T.unsqueeze(1)
-        critic_value_prim = self.critic_primary(state_action_tensor.clone().detach())
-        critic_value_sec = self.critic_secondary(state_action_tensor.clone().detach())
+        critic_value_prim = self.critic_primary(state_action_tensor)
+        critic_value_sec = self.critic_secondary(state_action_tensor)
 
         value_loss_prim = 0.5 * self.critic_primary.criterion(
             critic_value_prim.squeeze(2), critic_target

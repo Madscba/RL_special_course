@@ -35,7 +35,7 @@ class ActorNetwork_cont(torch.nn.Module):
             #torch.nn.Linear(self.hidden_dim, self.output_dim),
         )
         self.mu_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
-        self.log_sigma_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
+        self.sigma_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
 
         #self.log_std = torch.nn.Parameter(torch.ones(self.n_envs, self.output_dim))
         #self.log_std_layer = torch.nn.Linear(self.input_dim, self.output_dim)
@@ -60,11 +60,11 @@ class ActorNetwork_cont(torch.nn.Module):
         x = self.model(torch.Tensor(x))
 
         mu = self.mu_layer(x)
-        log_sigma_sq = self.log_sigma_layer(x)
-        log_sigma_sq = torch.clamp(log_sigma_sq, -20, 2)
-        sigma_sq = torch.exp(log_sigma_sq)
-        # sigma = self.sigma_layer(x)
-        #sigma = torch.clamp(sigma, min=self.reparam_noise, max=0.999999)
+        #log_sigma_sq = self.log_sigma_layer(x)
+        #log_sigma_sq = torch.clamp(log_sigma_sq, -20, 2)
+        #sigma_sq = torch.exp(log_sigma_sq)
+        sigma_sq = self.sigma_layer(x)
+        sigma_sq = torch.clamp(sigma_sq, min=self.reparam_noise, max=0.999999)
 
 
         dist = torch.distributions.Normal(mu, sigma_sq)

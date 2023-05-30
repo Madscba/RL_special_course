@@ -12,7 +12,7 @@ class Parser:
 
         # Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLanderContinuous-v2"
+            "--env_name", type=str, default="InvertedPendulum"
         )
 
         # Logger config
@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=300000,
+            default=15000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -56,7 +56,7 @@ class Parser:
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.995,
+            default=0.99,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -72,7 +72,7 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.0005,
+            default=0.0003,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
