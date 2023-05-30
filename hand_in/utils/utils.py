@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import gym
-from gym.wrappers import Monitor
+from gym.wrappers.record_video import RecordVideo
 import matplotlib.pyplot as plt
 
 from hand_in.environment.gym_environment import get_environment_info
@@ -64,8 +64,8 @@ def get_agent(argparser, environments):
 
 
 def evaluate_agent(agent, env_name, num_episodes=1, render=True):
-    env = gym.make(env_name)
-    env = Monitor(env, './results/temporary/video', force=True)  # Create video recording wrapper
+    env = gym.make(env_name, render_mode="rgb_array")
+    env = RecordVideo(env, './results/temporary/video', episode_trigger=lambda episode_number: True)
 
     episode_rewards = []
 

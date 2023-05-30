@@ -20,7 +20,7 @@ class ActorNetwork_disc(torch.nn.Module):
         self.input_dim = state_dim
         self.output_dim = action_dim
         self.n_envs = argparser.args.n_env
-        self.hidden_dim = argparser.args.n_env
+        self.hidden_dim = argparser.args.hidden_size
         self.checkpoint_file = os.path.join(os.getcwd(),'results/temporary',name+"_actor_d")
         self.lr = argparser.args.lr
         self.reparam_noise = 1e-6

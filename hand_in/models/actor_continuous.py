@@ -17,7 +17,7 @@ class ActorNetwork_cont(torch.nn.Module):
         self.input_dim = state_dim
         self.output_dim = action_dim
         self.n_envs = argparser.args.n_env
-        self.hidden_dim = argparser.args.n_env
+        self.hidden_dim = argparser.args.hidden_size
         self.lr = argparser.args.lr
         self.checkpoint_dir = os.path.join(os.getcwd(),'results/temporary',name+"_actor_c")
         self.reparam_noise = 1e-6

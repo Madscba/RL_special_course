@@ -10,7 +10,7 @@ class CriticNetwork(torch.nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.n_envs = argparser.args.n_env
-        self.hidden_dim = argparser.args.n_env
+        self.hidden_dim = argparser.args.hidden_size
         self.checkpoint_file = os.path.join(os.getcwd(),'results/temporary',name+"_critic")
         self.model = torch.nn.Sequential(
             torch.nn.Linear(self.input_dim, self.hidden_dim),
