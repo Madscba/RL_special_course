@@ -13,7 +13,7 @@ class RLLogger:
         argparser,
         frame_interval: int = 10000,
         log_format: str = "console",
-        log_frequency: int = 100,
+        log_frequency: int = 1,
     ):
         self.frame_interval = argparser.args.frame_interval
         self.log_frequency = log_frequency
@@ -63,8 +63,11 @@ class RLLogger:
         length = self.episode_lengths[self.episode_counter - 1]
         # exp_rate = self.exploration_rates[self.episode_counter-1]
         print(
-            f"Episode {self.episode_counter}: Reward = {reward =:.2f}, Length = {length:.2f}"
-        )  # , Exp. Rate = {exp_rate:.2f}
+            f"\nEpisode {self.episode_counter}: Reward = {reward =:.2f}, Length = {length:.2f}"
+        )
+
+        print(f"Avg rew 50epi: {np.mean(self.episode_rewards[:self.episode_counter - 1][-50:])}")
+
 
     def _write_to_file(self):
         log_data = {
@@ -81,9 +84,9 @@ class RLLogger:
             "wb",
         ) as outfile:
             pickle.dump(log_data, outfile)
-        print(
-            f"Saving log to file: {os.path.join(os.getcwd(), 'results', 'temporary', f'{self.run_name}.pickle')}"
-        )
+        #print(
+        #    f"Saving log to file: {os.path.join(os.getcwd(), 'results', 'temporary', f'{self.run_name}.pickle')}"
+        #)
 
     def plot_epi_rewards(self):
         plt.plot(self.episode_rewards)

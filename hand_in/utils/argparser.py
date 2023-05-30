@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=100000,
+            default=300000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -72,7 +72,7 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.001,
+            default=0.0005,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -97,7 +97,7 @@ class Parser:
         self.parser.add_argument(
             "--batch_size",
             type=int,
-            default=32,
+            default=256,
         )
         self.parser.add_argument("--use_replay", type=bool, default=True)
 
@@ -105,7 +105,7 @@ class Parser:
         self.parser.add_argument(
             "--grad_clipping",
             type=float,
-            default=0.5,
+            default=0,
             metavar="G",
             help="maximum grad value. If above 0 they are clipped",
         )
@@ -118,13 +118,19 @@ class Parser:
 
         # SAC
         self.parser.add_argument(
-            "--alpha", type=float, default=0.2, help="entropy weight"
+            "--alpha", type=float, default=0.0003, help="entropy weight"
         )
         self.parser.add_argument(
             "--tau",
             type=float,
-            default=0.001,
+            default=0.005,
             help="exponential moving average constant",
+        )
+        self.parser.add_argument(
+            "--reward_scale",
+            type=float,
+            default=2.0,
+            help="scale our rewards, depends on problem",
         )
 
         self.args = self.parser.parse_args()
