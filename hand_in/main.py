@@ -57,8 +57,8 @@ if __name__ == "__main__":
             terminated = False
             l.log_episode()
             print(action)
-        if frame_count % (p.args.n_steps//20) == 0 and (p.args.n_steps/1.25) < frame_count:
-            evaluate_agent(a, p.args.env_name, num_episodes=1, render=True)
+        # if frame_count % (p.args.n_steps//20) == 0 and (p.args.n_steps/1.25) < frame_count:
+        #     evaluate_agent(a, p.args.env_name, num_episodes=1, render=True)
 
     l.plot_epi_rewards()
     l.plot_step_rewards()

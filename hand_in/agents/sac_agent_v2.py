@@ -16,7 +16,7 @@ from hand_in.utils.replay_buffer import ReplayBuffer
 # https://arxiv.org/pdf/1812.05905.pdf
 
 
-class SACAgent(BaseAgent):
+class SACAgent_v2(BaseAgent):
     def __init__(self, argparser, action_dim, state_dim, n_actions, action_type,reward_scale:float=2):
         self.parser = argparser
         self.continuous = action_type == "continuous"

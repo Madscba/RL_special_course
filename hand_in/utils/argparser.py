@@ -12,7 +12,7 @@ class Parser:
 
         # Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
         self.parser.add_argument(
-            "--env_name", type=str, default="InvertedPendulum"
+            "--env_name", type=str, default="LunarLanderContinuous-v2"
         )
 
         # Logger config
@@ -25,7 +25,7 @@ class Parser:
         self.parser.add_argument(
             "--frame_interval",
             type=int,
-            default=5000,
+            default=10000,
             help="'file' saves .csv, 'console' prints to terminal. 'default' does both",
         )
         self.parser.add_argument(
@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=15000,
+            default=150000,
             metavar="N",
             help="number of steps (default: 100000)",
         )

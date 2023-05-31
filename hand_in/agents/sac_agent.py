@@ -16,7 +16,7 @@ from hand_in.utils.replay_buffer import ReplayBuffer
 # https://arxiv.org/pdf/1812.05905.pdf
 
 
-class SACAgent_v2(BaseAgent):
+class SACAgent(BaseAgent):
     def __init__(self, argparser, action_dim, state_dim, n_actions, action_type,reward_scale:float=2):
         self.parser = argparser
         self.continuous = action_type == "continuous"
@@ -26,9 +26,25 @@ class SACAgent_v2(BaseAgent):
         self.reward_scale = argparser.args.reward_scale
         self.gamma = argparser.args.gamma
         self.tau = argparser.args.tau
-        self.log_alpha = torch.tensor(np.log(torch.tensor(argparser.args.alpha,dtype=torch.float32)),dtype=torch.float32, requires_grad=True) #We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
-        self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.parser.args.lr)
+        # self.log_alpha = torch.tensor(np.log(torch.tensor(argparser.args.alpha,dtype=torch.float32)),dtype=torch.float32, requires_grad=True) #We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
+        # self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.parser.args.lr)
         self.target_entropy = torch.tensor(-action_dim,dtype=torch.float32, requires_grad=True)
+        self.value = CriticNetwork(
+            argparser=argparser,
+            input_dim=state_dim,
+            output_dim=1,
+            n_actions=n_actions,
+            action_type=action_type,
+            name="value"
+        )
+        self.value_target = CriticNetwork(
+            argparser=argparser,
+            input_dim=state_dim,
+            output_dim=1,
+            n_actions=n_actions,
+            action_type=action_type,
+            name="value_target"
+        )
         self.critic_primary = CriticNetwork(
             argparser=argparser,
             input_dim=state_dim + n_actions,
@@ -45,27 +61,12 @@ class SACAgent_v2(BaseAgent):
             action_type=action_type,
             name="critic_2"
         )
-        self.critic_target_primary = CriticNetwork(
-            argparser=argparser,
-            input_dim=state_dim + n_actions,
-            output_dim=1,
-            n_actions=n_actions,
-            action_type=action_type,
-            name="critic_t_1"
-        )
-        self.critic_target_secondary = CriticNetwork(
-            argparser=argparser,
-            input_dim=state_dim + n_actions,
-            output_dim=1,
-            n_actions=n_actions,
-            action_type=action_type,
-            name="critic_t_2"
-        )
-        self.initialize_targets()
+        self.target = self.initialize_target(self.value)
 
-        self.actor_network = self.init_actor_network(
-            argparser, action_dim, state_dim, n_actions, action_type
-        )
+        self.actor_network = ActorNetwork_cont(
+                argparser=argparser, action_dim=action_dim, state_dim=state_dim, name="actor"
+            )
+
         self.replay_buffer = ReplayBuffer(
             capacity=10e5,
             state_dim=state_dim,
@@ -75,9 +76,7 @@ class SACAgent_v2(BaseAgent):
             batch_size=argparser.args.batch_size
         )
 
-    def initialize_targets(self):
-        self.critic_target_primary = self.initialize_target(self.critic_primary)
-        self.critic_target_secondary = self.initialize_target(self.critic_secondary)
+
     def initialize_target(self, network_to_be_copied):
         target_network = copy.deepcopy(network_to_be_copied)
         for p in target_network.parameters():
@@ -103,45 +102,59 @@ class SACAgent_v2(BaseAgent):
                     f" mu: {policy_response_dict['mu']}, std: {policy_response_dict['sigma_sq']}, log_probs: {policy_response_dict['sigma_sq']}, entropy: {policy_response_dict['entropy']}") #alpha: {self.log_alpha.exp()},
 
         event_tuples = self.replay_buffer.get_batch_of_events()
-        states, actions, rewards, new_states, terminated = self.event_tuple_to_tensors(event_tuples)
+        state, action, reward, new_state, terminated = self.event_tuple_to_tensors(event_tuples)
 
-        # losses = self.compute_losses(states, actions, rewards, new_states, terminated)
+        ## Update value networks
+        state_value = self.value(state.T)
+        next_state_value = self.value_target(new_state.T)
+        terminated_idx = np.where(terminated.numpy()==1)[0]
+        next_state_value[terminated_idx] = 0
+
+        actions, policy_response_dict = self.follow_policy(state.T, reparameterize=False)
+
+        log_probs = policy_response_dict['log_probs'].sum(1,keepdim=True)
+        new_state_action_tensor = torch.hstack(
+            (state.T, torch.Tensor(actions).reshape(self.replay_buffer.batch_size, -1).to(
+                self.actor_network.device)))
+        critic_value_min = torch.min(
+            self.critic_primary(new_state_action_tensor),
+            self.critic_secondary(new_state_action_tensor),
+        )
+
+        self.value.optimizer.zero_grad()
+        value_target = critic_value_min - log_probs
+        value_loss = 0.5 * self.value.criterion(state_value, value_target)
+        value_loss.backward(retain_graph=True)
+        self.value.optimizer.step()
+
+
 
         #### Update Q function networks #####
-        actions_next, policy_response_dict_next = self.follow_policy(new_states.T.unsqueeze(1), reparameterize=False)
-        log_probs_next = policy_response_dict_next['log_probs'].sum(2,keepdim=True).squeeze(1)
-        new_state_action_tensor = torch.hstack(
-            (new_states.T, torch.Tensor(actions_next).reshape(self.replay_buffer.batch_size, -1).to(
-                self.actor_network.device))).unsqueeze(1)
-        critic_value_target_min = torch.min(
-            self.critic_target_primary(new_state_action_tensor),
-            self.critic_target_secondary(new_state_action_tensor),
-        )
-        reward = torch.Tensor(rewards).reshape(-1, 1)
+        reward = reward.reshape(-1,1)
+        q_target = self.reward_scale * reward + self.gamma * next_state_value
 
-        critic_target = self.reward_scale * reward + self.gamma * torch.tensor(1 - terminated.reshape(-1, 1)) * \
-                        (critic_value_target_min.squeeze(1) - (self.log_alpha.exp() * log_probs_next))
-        critic_target = critic_target.mean(axis=0)
-        # add .mean(axis=2) (log_alpha.exp * log_probs)?
-
-        state_action_tensor = torch.Tensor(torch.vstack((states, actions))).T.unsqueeze(1)
+        # actions_next, policy_response_dict_next = self.follow_policy(new_states.T.unsqueeze(1), reparameterize=False)
+        # log_probs_next = policy_response_dict_next['log_probs'].sum(2,keepdim=True).squeeze(1)
+        state_action_tensor = torch.hstack(
+            (state.T, torch.Tensor(action).reshape(self.replay_buffer.batch_size, -1).to(
+                self.actor_network.device)))
         critic_value_prim = self.critic_primary(state_action_tensor)
         critic_value_sec = self.critic_secondary(state_action_tensor)
 
-        value_loss_prim = self.critic_primary.criterion(
-            critic_value_prim.squeeze(), critic_target
+        critic_loss_prim = 0.5 * self.critic_primary.criterion(
+            critic_value_prim, q_target
         )
-        value_loss_sec = self.critic_secondary.criterion(
-            critic_value_sec.squeeze(), critic_target
+        critic_loss_sec = 0.5 * self.critic_secondary.criterion(
+            critic_value_sec, q_target
         )
 
-        self.critic_primary.optimizer.zero_grad()
-        self.critic_secondary.optimizer.zero_grad()
+        # self.critic_primary.optimizer.zero_grad()
+        # self.critic_secondary.optimizer.zero_grad()
 
-        # value_losses = value_loss_prim + value_loss_sec
-        # value_losses.backward()
-        value_loss_prim.backward(retain_graph=True)
-        value_loss_sec.backward()
+        critic_losses = critic_loss_prim + critic_loss_sec
+        critic_losses.backward()
+        # value_loss_prim.backward(retain_graph=True)
+        # value_loss_sec.backward()
 
         # if self.parser.args.grad_clipping:
         #     torch.nn.utils.clip_grad_norm_(
@@ -172,19 +185,20 @@ class SACAgent_v2(BaseAgent):
         #     params.requires_grad = False
         # for params in self.critic_secondary.parameters():
         #     params.requires_grad = False
-        new_obs_actions, policy_response_dict_ = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
-        log_probs = policy_response_dict_['log_probs'].sum(2,keepdim=True).squeeze(1)
+        actions, policy_response_dict_ = self.follow_policy(state.T, reparameterize=True)
+        log_probs = policy_response_dict_['log_probs'].sum(1,keepdim=True)
 
-        state_new_obs_action_tensor = torch.vstack((states,torch.Tensor(new_obs_actions).reshape(-1,self.replay_buffer.batch_size))).T.unsqueeze(1)
+        state_action_tensor = torch.hstack((state.T,torch.Tensor(actions).reshape(self.replay_buffer.batch_size,-1)))
         critic_value_min = torch.min(
-            self.critic_primary(state_new_obs_action_tensor),
-            self.critic_secondary(state_new_obs_action_tensor),
-        ).squeeze(1)
-        action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
+            self.critic_primary(state_action_tensor),
+            self.critic_secondary(state_action_tensor)
+        )
+        # action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
 
         # action_loss = losses['action_loss']
+        action_loss = (log_probs - critic_value_min).mean(0)
         self.actor_network.optimizer.zero_grad()
-        action_loss.backward()
+        action_loss.backward(retain_graph=True)
         # if self.parser.args.grad_clipping:
         #     torch.nn.utils.clip_grad_norm_(
         #         [p for g in self.actor_network.optimizer.param_groups for p in g["params"]],
@@ -202,29 +216,40 @@ class SACAgent_v2(BaseAgent):
         # Update alpha:
         # alpha_loss = losses["alpha_loss"]
         # print("alpha is not being updated")
-        new_obs_actions, policy_response_dict = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
-        log_probs = policy_response_dict['log_probs'].sum(2,keepdim=True).squeeze(1)
-        alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy)).mean(0)
-
-        self.alpha_optim.zero_grad()
-        alpha_loss.backward()
-        self.alpha_optim.step()
-        self.alpha = self.log_alpha.exp()
-
+        # new_obs_actions, policy_response_dict = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
+        # log_probs = policy_response_dict['log_probs'].sum(2,keepdim=True).squeeze(1)
+        # alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy)).mean(0)
+        #
+        # self.alpha_optim.zero_grad()
+        # alpha_loss.backward()
+        # self.alpha_optim.step()
+        # self.alpha = self.log_alpha.exp()
 
         #### Update Q function target networks with exponentially moving average:
-        for param, target_param in zip(self.critic_primary.parameters(), self.critic_target_primary.parameters()):
-            target_param.data.copy_(
-                self.tau * param.data + (1 - self.tau) * target_param.data
-            )
 
-        for param, target_param in zip(
-            self.critic_secondary.parameters(),
-            self.critic_target_secondary.parameters(),
-        ):
-            target_param.data.copy_(
-                self.tau * param.data + (1 - self.tau) * target_param.data
-            )
+        target_value_params = self.value_target.named_parameters()
+        value_params = self.value.named_parameters()
+
+        target_value_state_dict = dict(target_value_params)
+        value_state_dict = dict(value_params)
+
+        for name in value_state_dict:
+            value_state_dict[name] = self.tau*value_state_dict[name].clone() + \
+                    (1-self.tau)*target_value_state_dict[name].clone()
+
+        self.value_target.load_state_dict(value_state_dict)
+        # for param, target_param in zip(self.value.parameters(), self.value_target.parameters()):
+        #     target_param.data.copy_(
+        #         self.tau * param.data + (1 - self.tau) * target_param.data
+        #     )
+
+        # for param, target_param in zip(
+        #     self.critic_secondary.parameters(),
+        #     self.critic_target_secondary.parameters(),
+        # ):
+        #     target_param.data.copy_(
+        #         self.tau * param.data + (1 - self.tau) * target_param.data
+        #     )
 
     def event_tuple_to_tensors(self, event_tuples):
         states, actions, rewards, new_states, terminated = (
@@ -256,11 +281,11 @@ class SACAgent_v2(BaseAgent):
             self.actor_network.device), terminated.to(self.actor_network.device)
         return states, actions, rewards, new_states, terminated
 
-    def follow_policy(self, state, reparameterize=False):
+    def follow_policy(self, state, reparameterize=True):
         if not isinstance(state,torch.Tensor):
             state = torch.from_numpy(state).float().to(self.actor_network.device)
 
-        action, log_probs, entropy, info_dict = self.actor_network(state)
+        _, _, _, info_dict = self.actor_network(state)
         dist = info_dict['dist']
 
         if reparameterize:
@@ -271,8 +296,8 @@ class SACAgent_v2(BaseAgent):
         action = torch.tanh(actions)
         log_probs = dist.log_prob(actions)
         log_probs -= torch.log(1-action.pow(2)+self.actor_network.reparam_noise)
-        log_probs = log_probs #.sum(1, keepdim=True)
-
+        # log_probs = log_probs.sum(1, keepdim=True)
+        entropy = dist.entropy()
 
         if self.continuous:
             #print("potentially worth logging mu and std")
@@ -357,14 +382,3 @@ class SACAgent_v2(BaseAgent):
         self.critic_target_secondary.load_model_checkpoint()
         self.actor_network.load_model_checkpoint()
 
-    def init_actor_network(
-        self, argparser, action_dim, state_dim, n_actions, action_type
-    ):
-        if self.continuous:
-            return ActorNetwork_cont(
-                argparser=argparser, action_dim=action_dim, state_dim=state_dim, name="actor"
-            )
-        else:
-            return ActorNetwork_disc(
-                argparser=argparser, action_dim=action_dim, state_dim=state_dim
-            )

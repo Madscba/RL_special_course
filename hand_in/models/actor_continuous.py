@@ -49,20 +49,17 @@ class ActorNetwork_cont(torch.nn.Module):
         self.device = 'cpu'
         self.to(self.device)
 
-    def _init_weights(self, module):
-        if isinstance(module, torch.nn.Linear):
-            torch.nn.init.uniform_(module.weight.data)
-            #torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
-            if module.bias is not None:
-                module.bias.data.zero_()
+    # def _init_weights(self, module):
+    #     if isinstance(module, torch.nn.Linear):
+    #         torch.nn.init.uniform_(module.weight.data)
+    #         #torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
+    #         if module.bias is not None:
+    #             module.bias.data.zero_()
 
     def forward(self, x):
         x = self.model(torch.Tensor(x))
 
         mu = self.mu_layer(x)
-        #log_sigma_sq = self.log_sigma_layer(x)
-        #log_sigma_sq = torch.clamp(log_sigma_sq, -20, 2)
-        #sigma_sq = torch.exp(log_sigma_sq)
         sigma_sq = self.sigma_layer(x)
         sigma_sq = torch.clamp(sigma_sq, min=self.reparam_noise, max=0.999999)
 
@@ -73,19 +70,7 @@ class ActorNetwork_cont(torch.nn.Module):
 
         log_probs = dist.log_prob(action)
         log_probs -= torch.log(1 - action.pow(2) + self.reparam_noise) #We don't want value to be 0, so we add a small number (from paper appendix)
-        log_probs = log_probs #we need a single number to match the scalar loss but it will be handled later on
-        # log_probs = log_probs.sum(1, keepdim=True) #we need a single number to match the scalar loss
-
-        #value = torch.clamp(action, -0.999999, 0.999999)
-        #pre_tanh_value = torch.log(1 + value) / 2 - torch.log(1 - value) / 2
-
-        #log_probs = dist.log_prob(pre_tanh_value)
-
-        # correction_log_prob = - 2. * (
-        #         torch.tensor(0.69314718,dtype=torch.float32) #torch.from_numpy(np.log[2.])
-        #         - pre_tanh_value
-        #         - torch.nn.functional.softplus(-2. * pre_tanh_value)
-        # )
+        #log_probs = log_probs #we need a single number to match the scalar loss but it will be handled later on
 
         return action, log_probs, entropy, {"mu": mu, "sigma_sq": sigma_sq, "dist": dist}
 
