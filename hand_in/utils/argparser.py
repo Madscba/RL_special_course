@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=150000,
+            default=200000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -118,7 +118,7 @@ class Parser:
 
         # SAC
         self.parser.add_argument(
-            "--alpha", type=float, default=0.0003, help="entropy weight"
+            "--alpha", type=float, default=0.03, help="entropy weight"
         )
         self.parser.add_argument(
             "--tau",

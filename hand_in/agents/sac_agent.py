@@ -26,8 +26,8 @@ class SACAgent(BaseAgent):
         self.reward_scale = argparser.args.reward_scale
         self.gamma = argparser.args.gamma
         self.tau = argparser.args.tau
-        # self.log_alpha = torch.tensor(np.log(torch.tensor(argparser.args.alpha,dtype=torch.float32)),dtype=torch.float32, requires_grad=True) #We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
-        # self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.parser.args.lr)
+        self.log_alpha = torch.tensor(np.log(torch.tensor(argparser.args.alpha,dtype=torch.float32)),dtype=torch.float32, requires_grad=True) #We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
+        self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.parser.args.lr)
         self.target_entropy = torch.tensor(-action_dim,dtype=torch.float32, requires_grad=True)
         self.value = CriticNetwork(
             argparser=argparser,
@@ -61,7 +61,7 @@ class SACAgent(BaseAgent):
             action_type=action_type,
             name="critic_2"
         )
-        self.target = self.initialize_target(self.value)
+        self.update_value_target(tau=1)
 
         self.actor_network = ActorNetwork_cont(
                 argparser=argparser, action_dim=action_dim, state_dim=state_dim, name="actor"
@@ -79,8 +79,8 @@ class SACAgent(BaseAgent):
 
     def initialize_target(self, network_to_be_copied):
         target_network = copy.deepcopy(network_to_be_copied)
-        for p in target_network.parameters():
-            p.requires_grad = False
+        # for p in target_network.parameters():
+        #     p.requires_grad = False
         return target_network
 
     def update_policy(
@@ -107,7 +107,7 @@ class SACAgent(BaseAgent):
         ## Update value networks
         state_value = self.value(state.T)
         next_state_value = self.value_target(new_state.T)
-        terminated_idx = np.where(terminated.numpy()==1)[0]
+        terminated_idx = np.where(terminated.cpu().numpy()==1)[0]
         next_state_value[terminated_idx] = 0
 
         actions, policy_response_dict = self.follow_policy(state.T, reparameterize=False)
@@ -122,7 +122,7 @@ class SACAgent(BaseAgent):
         )
 
         self.value.optimizer.zero_grad()
-        value_target = critic_value_min - log_probs
+        value_target = critic_value_min - log_probs * self.log_alpha.exp()
         value_loss = 0.5 * self.value.criterion(state_value, value_target)
         value_loss.backward(retain_graph=True)
         self.value.optimizer.step()
@@ -188,7 +188,8 @@ class SACAgent(BaseAgent):
         actions, policy_response_dict_ = self.follow_policy(state.T, reparameterize=True)
         log_probs = policy_response_dict_['log_probs'].sum(1,keepdim=True)
 
-        state_action_tensor = torch.hstack((state.T,torch.Tensor(actions).reshape(self.replay_buffer.batch_size,-1)))
+        state_action_tensor = torch.hstack((state.T,torch.Tensor(actions).reshape(self.replay_buffer.batch_size,-1).to(
+                self.actor_network.device)))
         critic_value_min = torch.min(
             self.critic_primary(state_action_tensor),
             self.critic_secondary(state_action_tensor)
@@ -196,7 +197,7 @@ class SACAgent(BaseAgent):
         # action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
 
         # action_loss = losses['action_loss']
-        action_loss = (log_probs - critic_value_min).mean(0)
+        action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
         self.actor_network.optimizer.zero_grad()
         action_loss.backward(retain_graph=True)
         # if self.parser.args.grad_clipping:
@@ -211,8 +212,8 @@ class SACAgent(BaseAgent):
         #     params.requires_grad = True
 
 
-
-
+        self.update_value_target(tau=self.tau)
+        #print(f'val: {value_loss},c1: {critic_loss_prim}, c2 {critic_loss_sec}, po: {action_loss}' )
         # Update alpha:
         # alpha_loss = losses["alpha_loss"]
         # print("alpha is not being updated")
@@ -227,17 +228,7 @@ class SACAgent(BaseAgent):
 
         #### Update Q function target networks with exponentially moving average:
 
-        target_value_params = self.value_target.named_parameters()
-        value_params = self.value.named_parameters()
 
-        target_value_state_dict = dict(target_value_params)
-        value_state_dict = dict(value_params)
-
-        for name in value_state_dict:
-            value_state_dict[name] = self.tau*value_state_dict[name].clone() + \
-                    (1-self.tau)*target_value_state_dict[name].clone()
-
-        self.value_target.load_state_dict(value_state_dict)
         # for param, target_param in zip(self.value.parameters(), self.value_target.parameters()):
         #     target_param.data.copy_(
         #         self.tau * param.data + (1 - self.tau) * target_param.data
@@ -281,7 +272,7 @@ class SACAgent(BaseAgent):
             self.actor_network.device), terminated.to(self.actor_network.device)
         return states, actions, rewards, new_states, terminated
 
-    def follow_policy(self, state, reparameterize=True):
+    def follow_policy(self, state, reparameterize=False):
         if not isinstance(state,torch.Tensor):
             state = torch.from_numpy(state).float().to(self.actor_network.device)
 
@@ -363,6 +354,19 @@ class SACAgent(BaseAgent):
                   }
 
         return losses
+
+    def update_value_target(self,tau=1):
+        target_value_params = self.value_target.named_parameters()
+        value_params = self.value.named_parameters()
+
+        target_value_state_dict = dict(target_value_params)
+        value_state_dict = dict(value_params)
+
+        for name in value_state_dict:
+            value_state_dict[name] = tau*value_state_dict[name].clone() + \
+                    (1-tau)*target_value_state_dict[name].clone()
+
+        self.value_target.load_state_dict(value_state_dict)
     def uses_replay_buffer(self):
         return True
 

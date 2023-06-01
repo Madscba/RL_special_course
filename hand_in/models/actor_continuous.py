@@ -1,6 +1,8 @@
 import torch
 import os
 import numpy as np
+from torch.distributions.normal import Normal
+
 
 class ActorNetwork_cont(torch.nn.Module):
     """Actor network (continuous action space)"""
@@ -45,16 +47,16 @@ class ActorNetwork_cont(torch.nn.Module):
         #)
 
         # self.apply(self._init_weights)
-        # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.device = 'cpu'
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # self.device = 'cpu'
         self.to(self.device)
 
-    # def _init_weights(self, module):
-    #     if isinstance(module, torch.nn.Linear):
-    #         torch.nn.init.uniform_(module.weight.data)
-    #         #torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
-    #         if module.bias is not None:
-    #             module.bias.data.zero_()
+    def _init_weights(self, module):
+        if isinstance(module, torch.nn.Linear):
+            torch.nn.init.normal_(module.weight.data)
+            #torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
+            if module.bias is not None:
+                module.bias.data.zero_()
 
     def forward(self, x):
         x = self.model(torch.Tensor(x))
@@ -62,15 +64,18 @@ class ActorNetwork_cont(torch.nn.Module):
         mu = self.mu_layer(x)
         sigma_sq = self.sigma_layer(x)
         sigma_sq = torch.clamp(sigma_sq, min=self.reparam_noise, max=0.999999)
+        # print(mu,sigma_sq)
 
-
-        dist = torch.distributions.Normal(mu, sigma_sq)
+        dist = Normal(mu, sigma_sq)
         action = dist.sample()
         entropy = dist.entropy()  # Corresponds to 0.5 * ((log_sigma_sq ** 2 * 2 * pi).log() + 1)  # Entropy of gaussian: https://gregorygundersen.com/blog/2020/09/01/gaussian-entropy/
 
         log_probs = dist.log_prob(action)
         log_probs -= torch.log(1 - action.pow(2) + self.reparam_noise) #We don't want value to be 0, so we add a small number (from paper appendix)
         #log_probs = log_probs #we need a single number to match the scalar loss but it will be handled later on
+
+        # mean_value = self.get_mean_parameter_value(self)
+        # print("Mean parameter value:", mean_value.item())
 
         return action, log_probs, entropy, {"mu": mu, "sigma_sq": sigma_sq, "dist": dist}
 
@@ -80,3 +85,16 @@ class ActorNetwork_cont(torch.nn.Module):
 
     def load_model_checkpoint(self):
         self.load_state_dict(torch.load(self.checkpoint_file))
+
+
+    def get_mean_parameter_value(self, model):
+        parameters = model.parameters()
+        total_params = 0
+        total_value = 0
+
+        for param in parameters:
+            total_params += param.numel()
+            total_value += torch.sum(param.data)
+
+        mean_value = total_value / total_params
+        return mean_value
