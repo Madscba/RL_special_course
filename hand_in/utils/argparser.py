@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=200000,
+            default=100000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -51,7 +51,7 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="SAC"
+            "--algorithm", type=str, default="SAC_v1"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
@@ -72,7 +72,7 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.0003,
+            default=0.001,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -118,12 +118,12 @@ class Parser:
 
         # SAC
         self.parser.add_argument(
-            "--alpha", type=float, default=0.03, help="entropy weight"
+            "--alpha", type=float, default=1, help="entropy weight"
         )
         self.parser.add_argument(
             "--tau",
             type=float,
-            default=0.005,
+            default=0.01, #0.005
             help="exponential moving average constant",
         )
         self.parser.add_argument(

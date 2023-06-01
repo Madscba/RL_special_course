@@ -9,6 +9,7 @@ from hand_in.agents.dqn_agent import DQNAgent
 from hand_in.agents.reinforce_agent import ReinforceAgent
 from hand_in.agents.actor_critic_agent import ACAgent
 from hand_in.agents.sac_agent import SACAgent
+from hand_in.agents.sac_agent_v1 import SACAgent_v1
 from hand_in.agents.sac_agent_v2 import SACAgent_v2
 
 
@@ -55,6 +56,12 @@ def get_agent(argparser, environments):
                             state_dim=state_dim,
                             n_actions=n_actions,
                             action_type=action_type, )
+    elif argparser.args.algorithm == "SAC_v1":
+        agent = SACAgent_v1(argparser=argparser,
+                            action_dim=action_dim,
+                            state_dim=state_dim,
+                            n_actions=n_actions,
+                            action_type=action_type, )
     elif argparser.args.algorithm == "SAC_v2":
         agent = SACAgent_v2(argparser=argparser,
                             action_dim=action_dim,
@@ -93,11 +100,11 @@ def evaluate_agent(agent, env_name, num_episodes=1, render=True):
     env.close()
 
     # Plot rewards
-    plt.plot(episode_rewards)
-    plt.xlabel('Episode')
-    plt.ylabel('Reward')
-    plt.title('Agent Evaluation')
-    plt.show()
+    # plt.plot(episode_rewards)
+    # plt.xlabel('Episode')
+    # plt.ylabel('Reward')
+    # plt.title('Agent Evaluation')
+    # plt.show()
 
 def set_seed(seed: int = 3):
     np.random.seed(seed)
