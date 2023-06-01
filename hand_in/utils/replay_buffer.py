@@ -42,10 +42,10 @@ class ReplayBuffer:
         if self.used_for_policy_gradient_method:
             self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
                 (
-                    torch.from_numpy(state).cpu(),
+                    torch.from_numpy(state.reshape(1,-1)).cpu(),
                     torch.from_numpy(action).reshape(-1, self.n_actions).cpu(),
                     torch.from_numpy(reward.reshape(-1, 1)).cpu(),
-                    torch.from_numpy(next_state).cpu(),
+                    torch.from_numpy(next_state.reshape(1,-1)).cpu(),
                     torch.from_numpy(terminated.reshape(-1, 1)).cpu(),
                     policy_response_dict["log_probs"].reshape(-1, self.n_actions).detach().cpu(),
                     policy_response_dict["entropy"].reshape(-1, self.n_actions).detach().cpu(),

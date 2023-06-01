@@ -50,8 +50,8 @@ class RLLogger:
 
     def log_step(self, reward):
         self.step_counter += 1
-        self.step_rewards.append(reward[0])
-        self.current_episode_reward += reward[0]
+        self.step_rewards.append(reward[0][0])
+        self.current_episode_reward += reward[0][0]
         self.current_episode_frame_counter += 1
 
     def reset_epi_stats(self):

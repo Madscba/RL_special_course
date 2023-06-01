@@ -6,7 +6,7 @@ from torch.autograd import Variable
 from hand_in.agents.base_agent import BaseAgent
 from hand_in.utils.replay_buffer import ReplayBuffer
 from hand_in.models.dqn_model import DQNetwork
-from hand_in.environment.gym_environment import get_envs
+from hand_in.environment.gym_environment import get_envs_vec
 
 
 class DQNAgent(BaseAgent):
@@ -32,7 +32,7 @@ class DQNAgent(BaseAgent):
                 state_dim=self.DQN.input_dim,
                 n_actions=n_actions,
             )
-        self.sample_env, _ = get_envs(
+        self.sample_env, _ = get_envs_vec(
             env_id=argparser.args.env_name, num_envs=1
         )  # Used to sample random actions
 
