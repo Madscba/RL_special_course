@@ -295,9 +295,9 @@ class SACAgent_v1(BaseAgent):
         terminated_idx = np.where(terminated.cpu().numpy() == 1)[0]
         value_[terminated_idx] = 0
 
-        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=False)
+        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)
         log_probs = log_probs.view(-1)
-        inp = torch.cat([state.T, action.T], dim=1)
+        inp = torch.cat([state.T, actions], dim=1)
         q1_new_policy = self.critic_primary.forward(inp)
         q2_new_policy = self.critic_secondary.forward(inp)
         critic_value = torch.min(q1_new_policy, q2_new_policy)
@@ -323,6 +323,9 @@ class SACAgent_v1(BaseAgent):
         actor_loss.backward(retain_graph=True)
         self.actor_network.optimizer.step()
 
+        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)
+        log_probs = log_probs.view(-1)
+        inp = torch.cat([state.T, actions], dim=1)
         self.critic_primary.optimizer.zero_grad()
         self.critic_secondary.optimizer.zero_grad()
         q_hat = self.reward_scale * reward + self.gamma * value_
