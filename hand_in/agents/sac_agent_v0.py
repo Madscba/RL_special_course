@@ -18,7 +18,7 @@ from hand_in.utils.replay_buffer import ReplayBuffer
 # https://arxiv.org/pdf/1812.05905.pdf
 
 
-class SACAgent_v1(BaseAgent):
+class SACAgent_v0(BaseAgent):
     def __init__(self, argparser, action_dim, state_dim, n_actions, action_type, reward_scale: float = 2):
         self.parser = argparser
         self.continuous = action_type == "continuous"
@@ -100,144 +100,74 @@ class SACAgent_v1(BaseAgent):
             print("nothing happened yet as we have to little exp") if self.replay_buffer.event_idx % 20 == 0 else ""
             return
 
-        if True:
-            self.learn()
-            return
         event_tuples = self.replay_buffer.get_batch_of_events()
-        state, action, reward, new_state, terminated = self.event_tuple_to_tensors(event_tuples)
+        state, action, reward, state_, terminated = self.event_tuple_to_tensors(event_tuples)
+        input_to_critic_networks = torch.cat([state.T, action.T], dim=1)
 
-        ## Update value networks
-        state_value = self.value(state.T).view(-1)
-        next_state_value = self.value_target(new_state.T).view(-1)
-        terminated_idx = np.where(terminated.cpu().numpy() == 1)[0]
-        next_state_value[terminated_idx] = 0
+        self.update_value_network(input_to_critic_networks, state)
 
-        actions, policy_response_dict = self.follow_policy(state.T, reparameterize=False)
+        self.update_actor_network(state)
 
-        log_probs = policy_response_dict['log_probs'].sum(1)
-        new_state_action_tensor = torch.hstack(
-            (state.T, torch.Tensor(actions).reshape(self.replay_buffer.batch_size, -1).to(
-                self.actor_network.device)))
-        critic_value_min = torch.min(
-            self.critic_primary(new_state_action_tensor),
-            self.critic_secondary(new_state_action_tensor),
-        ).view(-1)
+        self.update_critic_networks(input_to_critic_networks, reward, state_, terminated)
 
-        self.value.optimizer.zero_grad()
-        value_target = critic_value_min - log_probs * self.log_alpha.exp()
-        value_loss = 0.5 * self.value.criterion(state_value, value_target)
-        value_loss.backward(retain_graph=True)
-        self.value.optimizer.step()
+        self.update_value_target()
 
-        #### Update Q function networks #####
-        reward = reward.view(-1)
-        q_target = self.reward_scale * reward + self.gamma * next_state_value
-
-        # actions_next, policy_response_dict_next = self.follow_policy(new_states.T.unsqueeze(1), reparameterize=False)
-        # log_probs_next = policy_response_dict_next['log_probs'].sum(2,keepdim=True).squeeze(1)
-        state_action_tensor = torch.hstack(
-            (state.T, torch.Tensor(action).reshape(self.replay_buffer.batch_size, -1).to(
-                self.actor_network.device)))
-        critic_value_prim = self.critic_primary(state_action_tensor).view(-1)
-        critic_value_sec = self.critic_secondary(state_action_tensor).view(-1)
-
-        critic_loss_prim = 0.5 * self.critic_primary.criterion(
-            critic_value_prim, q_target
-        )
-        critic_loss_sec = 0.5 * self.critic_secondary.criterion(
-            critic_value_sec, q_target
-        )
-
-        # self.critic_primary.optimizer.zero_grad()
-        # self.critic_secondary.optimizer.zero_grad()
-
-        critic_losses = critic_loss_prim + critic_loss_sec
+    def update_critic_networks(self, input_to_critic_networks, reward, state_, terminated):
+        critic_losses = self.get_critic_losses(input_to_critic_networks, reward, state_, terminated)
+        self.critic_primary.optimizer.zero_grad()
+        self.critic_secondary.optimizer.zero_grad()
         critic_losses.backward()
-        # value_loss_prim.backward(retain_graph=True)
-        # value_loss_sec.backward()
-
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [
-        #             p
-        #             for g in self.critic_primary.optimizer.param_groups
-        #             for p in g["params"]
-        #         ],
-        #         self.parser.args.grad_clipping,
-        #     )
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [
-        #             p
-        #             for g in self.critic_secondary.optimizer.param_groups
-        #             for p in g["params"]
-        #         ],
-        #         self.parser.args.grad_clipping,
-        #     )
-
         self.critic_primary.optimizer.step()
         self.critic_secondary.optimizer.step()
 
-        #### Update actor network
-        # for params in self.critic_primary.parameters():
-        #     params.requires_grad = False
-        # for params in self.critic_secondary.parameters():
-        #     params.requires_grad = False
-        actions, policy_response_dict_ = self.follow_policy(state.T, reparameterize=True)
-        log_probs = policy_response_dict_['log_probs'].sum(1)
+    def get_critic_losses(self, input_to_critic_networks, reward, state_, terminated):
+        reward = reward.view(-1)
+        value_ = self.value_target(state_.T).view(-1)
+        terminated_idx = np.where(terminated.cpu().numpy() == 1)[0]
+        value_[terminated_idx] = 0
+        q_hat = self.reward_scale * reward + self.gamma * value_
+        q1_old_policy = self.critic_primary.forward(input_to_critic_networks).view(-1)
+        q2_old_policy = self.critic_secondary.forward(input_to_critic_networks).view(-1)
+        critic_primary_loss = self.critic_primary.criterion(q1_old_policy, q_hat)
+        critic_secondary_loss = self.critic_secondary.criterion(q2_old_policy, q_hat)
+        critic_losses = critic_primary_loss + critic_secondary_loss
+        return critic_losses
 
-        state_action_tensor = torch.hstack(
-            (state.T, torch.Tensor(actions).reshape(self.replay_buffer.batch_size, -1).to(
-                self.actor_network.device)))
-        critic_value_min = torch.min(
-            self.critic_primary(state_action_tensor),
-            self.critic_secondary(state_action_tensor)
-        ).view(-1)
-        # action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
-
-        # action_loss = losses['action_loss']
-        action_loss = (self.log_alpha.exp() * log_probs - critic_value_min).mean(0)
+    def update_actor_network(self, state):
+        actor_loss = self.get_actor_loss(state)
         self.actor_network.optimizer.zero_grad()
-        action_loss.backward(retain_graph=True)
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [p for g in self.actor_network.optimizer.param_groups for p in g["params"]],
-        #         self.parser.args.grad_clipping,)
+        actor_loss.backward(retain_graph=True)
         self.actor_network.optimizer.step()
 
-        # for params in self.critic_primary.parameters():
-        #     params.requires_grad = True
-        # for params in self.critic_secondary.parameters():
-        #     params.requires_grad = True
+    def get_actor_loss(self, state):
+        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)
+        log_probs = log_probs.view(-1)
+        inp_ = torch.cat([state.T, actions], dim=1)
+        q1_new_policy = self.critic_primary.forward(inp_)
+        q2_new_policy = self.critic_secondary.forward(inp_)
+        critic_value = torch.min(q1_new_policy, q2_new_policy)
+        critic_value = critic_value.view(-1)
+        actor_loss = log_probs - critic_value
+        actor_loss = torch.mean(actor_loss)
+        return actor_loss
 
-        self.update_value_target(tau=self.tau)
-        # print(f'val: {value_loss},c1: {critic_loss_prim}, c2 {critic_loss_sec}, po: {action_loss}' )
-        # Update alpha:
-        # alpha_loss = losses["alpha_loss"]
-        # print("alpha is not being updated")
-        # new_obs_actions, policy_response_dict = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
-        # log_probs = policy_response_dict['log_probs'].sum(2,keepdim=True).squeeze(1)
-        # alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy)).mean(0)
-        #
-        # self.alpha_optim.zero_grad()
-        # alpha_loss.backward()
-        # self.alpha_optim.step()
-        # self.alpha = self.log_alpha.exp()
+    def update_value_network(self, input_to_critic_networks, state):
+        value_loss = self.get_value_loss(input_to_critic_networks, state)
+        self.value.optimizer.zero_grad()
+        value_loss.backward(retain_graph=True)
+        self.value.optimizer.step()
 
-        #### Update Q function target networks with exponentially moving average:
-
-        # for param, target_param in zip(self.value.parameters(), self.value_target.parameters()):
-        #     target_param.data.copy_(
-        #         self.tau * param.data + (1 - self.tau) * target_param.data
-        #     )
-
-        # for param, target_param in zip(
-        #     self.critic_secondary.parameters(),
-        #     self.critic_target_secondary.parameters(),
-        # ):
-        #     target_param.data.copy_(
-        #         self.tau * param.data + (1 - self.tau) * target_param.data
-        #     )
+    def get_value_loss(self, input_to_critic_networks, state):
+        value = self.value(state.T).view(-1)
+        _, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=False)
+        log_probs = log_probs.view(-1)
+        q1_new_policy = self.critic_primary.forward(input_to_critic_networks)
+        q2_new_policy = self.critic_secondary.forward(input_to_critic_networks)
+        critic_value = torch.min(q1_new_policy, q2_new_policy)
+        critic_value = critic_value.view(-1)
+        value_target = critic_value - log_probs
+        value_loss = 0.5 * self.value.criterion(value, value_target)
+        return value_loss
 
     def event_tuple_to_tensors(self, event_tuples):
         states, actions, rewards, new_states, terminated = (
@@ -284,112 +214,7 @@ class SACAgent_v1(BaseAgent):
         else:
             return actions.cpu().detach().numpy()[0], policy_response_dict
 
-    def learn(self):
-        event_tuples = self.replay_buffer.get_batch_of_events()
-        state, action, reward, state_, terminated = self.event_tuple_to_tensors(event_tuples)
 
-
-        reward = reward.view(-1)
-        value = self.value(state.T).view(-1)
-        value_ = self.value_target(state_.T).view(-1)
-        terminated_idx = np.where(terminated.cpu().numpy() == 1)[0]
-        value_[terminated_idx] = 0
-
-        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=False)
-        log_probs = log_probs.view(-1)
-        inp = torch.cat([state.T, action.T], dim=1)
-        q1_new_policy = self.critic_primary.forward(inp)
-        q2_new_policy = self.critic_secondary.forward(inp)
-        critic_value = torch.min(q1_new_policy, q2_new_policy)
-        critic_value = critic_value.view(-1)
-
-        self.value.optimizer.zero_grad()
-        value_target = critic_value - log_probs
-        value_loss = 0.5 * self.value.criterion(value, value_target)
-        value_loss.backward(retain_graph=True)
-        self.value.optimizer.step()
-
-        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)
-        log_probs = log_probs.view(-1)
-        inp_ = torch.cat([state.T, actions], dim=1)
-        q1_new_policy = self.critic_primary.forward(inp_)
-        q2_new_policy = self.critic_secondary.forward(inp_)
-        critic_value = torch.min(q1_new_policy, q2_new_policy)
-        critic_value = critic_value.view(-1)
-
-        actor_loss = log_probs - critic_value
-        actor_loss = torch.mean(actor_loss)
-        self.actor_network.optimizer.zero_grad()
-        actor_loss.backward(retain_graph=True)
-        self.actor_network.optimizer.step()
-
-        self.critic_primary.optimizer.zero_grad()
-        self.critic_secondary.optimizer.zero_grad()
-        q_hat = self.reward_scale * reward + self.gamma * value_
-        q1_old_policy = self.critic_primary.forward(inp).view(-1)
-        q2_old_policy = self.critic_secondary.forward(inp).view(-1)
-        critic_1_loss = 0.5 * self.critic_primary.criterion(q1_old_policy, q_hat)
-        critic_2_loss = 0.5 * self.critic_secondary.criterion(q2_old_policy, q_hat)
-
-        critic_loss = critic_1_loss + critic_2_loss
-        critic_loss.backward()
-        self.critic_primary.optimizer.step()
-        self.critic_secondary.optimizer.step()
-
-        self.update_value_target()
-
-    def compute_losses(self, states, actions, rewards, new_states, terminated):
-        # Q-functions loss
-        actions_next, policy_response_dict_next = self.follow_policy(new_states.T.unsqueeze(1), reparameterize=False)
-        log_probs_next = policy_response_dict_next["log_probs"]
-        new_state_action_tensor = torch.hstack(
-            (new_states.T, torch.Tensor(actions_next).reshape(self.replay_buffer.batch_size, -1).to(
-                self.actor_network.device))).unsqueeze(1)
-        critic_value_target_min = torch.min(
-            self.critic_target_secondary(new_state_action_tensor),
-            self.critic_target_secondary(new_state_action_tensor),
-        )
-        reward = torch.Tensor(rewards).reshape(-1, 1)
-
-        critic_target = self.reward_scale * reward + self.gamma * torch.tensor(1 - terminated.reshape(-1, 1)) * (
-                critic_value_target_min.squeeze(1) - (self.log_alpha.exp() * log_probs_next).mean(axis=2))
-        # add .mean(axis=2) (log_alpha.exp * log_probs)?
-
-        state_action_tensor = torch.Tensor(torch.vstack((states, actions))).T.unsqueeze(1)
-        critic_value_prim = self.critic_primary(state_action_tensor)
-        critic_value_sec = self.critic_secondary(state_action_tensor)
-
-        value_loss_prim = 0.5 * self.critic_primary.criterion(
-            critic_value_prim.squeeze(2), critic_target
-        )
-        value_loss_sec = 0.5 * self.critic_secondary.criterion(
-            critic_value_sec.squeeze(2), critic_target
-        )
-
-        # alpha and policy loss
-        new_obs_actions, policy_response_dict = self.follow_policy(states.T.unsqueeze(1), reparameterize=True)
-        log_probs = policy_response_dict['log_probs'].unsqueeze(-1)
-        alpha_loss = -(self.log_alpha * (log_probs + self.target_entropy)).mean()
-
-        state_new_obs_action_tensor = torch.hstack((states.T.clone(),
-                                                    torch.Tensor(new_obs_actions).reshape(self.replay_buffer.batch_size,
-                                                                                          -1).to(
-                                                        self.actor_network.device))).unsqueeze(1)
-        critic_value_min = torch.min(
-            self.critic_primary(state_new_obs_action_tensor),
-            self.critic_secondary(state_new_obs_action_tensor),
-        )
-        action_loss = (self.log_alpha.exp() * log_probs - critic_value_min.clone()).mean()
-        # action_loss = (log_probs - critic_value_min).mean()
-        # print("consider whether  alpha should be multiplied on or not")
-
-        losses = {"alpha_loss": alpha_loss,
-                  "action_loss": action_loss,
-                  "value_loss_prim": value_loss_prim,
-                  "value_loss_sec": value_loss_sec
-                  }
-
-        return losses
 
     def update_value_target(self, tau=1):
         target_value_params = self.value_target.named_parameters()
