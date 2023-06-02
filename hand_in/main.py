@@ -11,6 +11,7 @@ if __name__ == "__main__":
     p = Parser()
     set_seed(p.args.seed)
 
+    #starting refactoring
     # #
     # for alpha in np.linspace(0.0003,1,3)[::-1]:
     #     for tau in [0.05, 0.005]:
