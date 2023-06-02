@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=500000,
+            default=200000,
             metavar="N",
             help="number of steps (default: 100000)",
         )

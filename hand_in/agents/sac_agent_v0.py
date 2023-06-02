@@ -28,11 +28,6 @@ class SACAgent_v0(BaseAgent):
         self.reward_scale = argparser.args.reward_scale
         self.gamma = argparser.args.gamma
         self.tau = argparser.args.tau
-        self.log_alpha = torch.tensor(np.log(torch.tensor(argparser.args.alpha, dtype=torch.float32)),
-                                      dtype=torch.float32,
-                                      requires_grad=True)  # We introduce and learn log alpha to ensure positivity and exponentiate it whenever needed
-        self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self.parser.args.lr)
-        self.target_entropy = torch.tensor(-action_dim, dtype=torch.float32, requires_grad=True)
         self.value = CriticNetwork(
             argparser=argparser,
             input_dim=state_dim,
@@ -55,7 +50,7 @@ class SACAgent_v0(BaseAgent):
             output_dim=1,
             n_actions=n_actions,
             action_type=action_type,
-            name="critic_1"
+            name="critic_primary"
         )
         self.critic_secondary = CriticNetwork(
             argparser=argparser,
@@ -63,7 +58,7 @@ class SACAgent_v0(BaseAgent):
             output_dim=1,
             n_actions=n_actions,
             action_type=action_type,
-            name="critic_2"
+            name="critic_secondary"
         )
         self.update_value_target(tau=1)
 
@@ -79,12 +74,6 @@ class SACAgent_v0(BaseAgent):
             used_for_policy_gradient_method=True,
             batch_size=argparser.args.batch_size
         )
-
-    def initialize_target(self, network_to_be_copied):
-        target_network = copy.deepcopy(network_to_be_copied)
-        # for p in target_network.parameters():
-        #     p.requires_grad = False
-        return target_network
 
     def update_policy(
             self,
@@ -138,6 +127,7 @@ class SACAgent_v0(BaseAgent):
         self.actor_network.optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
         self.actor_network.optimizer.step()
+        self.actor_network.lr_scheduler.step()
 
     def get_actor_loss(self, state):
         actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)
@@ -233,7 +223,7 @@ class SACAgent_v0(BaseAgent):
         return True
 
     def save_models(self):
-        print("saving all 5 models:")
+        print("saving SAC_v0 models:")
         self.critic_primary.save_model_checkpoint()
         self.critic_secondary.save_model_checkpoint()
         self.critic_target_primary.save_model_checkpoint()
@@ -241,7 +231,7 @@ class SACAgent_v0(BaseAgent):
         self.actor_network.save_model_checkpoint()
 
     def load_models(self):
-        print("loading all 5 models:")
+        print("loading  SAC_v0 models:")
         self.critic_primary.load_model_checkpoint()
         self.critic_secondary.load_model_checkpoint()
         self.critic_target_primary.load_model_checkpoint()

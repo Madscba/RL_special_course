@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch.optim as optim
 from torch.distributions.normal import Normal
-import numpy as np
+from torch.optim.lr_scheduler import ExponentialLR
 
 class SACActorNetwork(nn.Module):
     def __init__(
@@ -27,6 +27,8 @@ class SACActorNetwork(nn.Module):
         self.sigma = nn.Linear(self.hidden_dim, self.output_dim)
 
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        self.lr_scheduler = ExponentialLR(self.optimizer, gamma= 0.999993) #Half learning rate after 100.000 steps
+
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = 'cpu'
 
