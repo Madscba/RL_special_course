@@ -27,7 +27,8 @@ class SACActorNetwork(nn.Module):
         self.sigma = nn.Linear(self.hidden_dim, self.output_dim)
 
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = 'cpu'
 
         self.to(self.device)
 

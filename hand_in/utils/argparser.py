@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=100000,
+            default=500000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -72,7 +72,7 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.001,
+            default=0.0003,
             metavar="N",
             help="learning rate (default: 0.001)",
         )

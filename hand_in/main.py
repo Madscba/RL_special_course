@@ -58,8 +58,8 @@ if __name__ == "__main__":
             state, _ = e.reset()
             terminated = False
             l.log_episode()
-            if l.episode_counter % 50 == 0:
-                evaluate_agent(a, p.args.env_name, num_episodes=3)
+            # if l.episode_counter % 50 == 0:
+            #     evaluate_agent(a, p.args.env_name, num_episodes=3)
 
 
 
