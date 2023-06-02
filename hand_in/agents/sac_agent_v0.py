@@ -223,7 +223,7 @@ class SACAgent_v0(BaseAgent):
         return True
 
     def save_models(self):
-        print("saving SAC_v0 models:")
+        print("saving SAC_v0.sh models:")
         self.critic_primary.save_model_checkpoint()
         self.critic_secondary.save_model_checkpoint()
         self.critic_target_primary.save_model_checkpoint()
@@ -231,7 +231,7 @@ class SACAgent_v0(BaseAgent):
         self.actor_network.save_model_checkpoint()
 
     def load_models(self):
-        print("loading  SAC_v0 models:")
+        print("loading  SAC_v0.sh models:")
         self.critic_primary.load_model_checkpoint()
         self.critic_secondary.load_model_checkpoint()
         self.critic_target_primary.load_model_checkpoint()
