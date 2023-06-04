@@ -93,12 +93,14 @@ class RLLogger:
         plt.xlabel("Episode")
         plt.ylabel("Reward")
         plt.title("Reward Progress")
+        plt.savefig(f'epi_rew_{self.run_name}.png')
         plt.show()
 
         plt.plot(self.episode_lengths)
         plt.xlabel("Episode")
         plt.ylabel("Length")
         plt.title("Length of episodes")
+        plt.savefig(f'epi_length_{self.run_name}.png')
         plt.show()
 
     def plot_step_rewards(self):
@@ -131,6 +133,7 @@ class RLLogger:
             label="maximum avg. rew: {:.2f}".format(x_max),
         )
         plt.legend(loc="lower right")
+        plt.savefig(f'avg_step_rew_{self.run_name}.png')
         plt.show()
 
 

@@ -27,7 +27,7 @@ class SACActorNetwork(nn.Module):
         self.sigma = nn.Linear(self.hidden_dim, self.output_dim)
 
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        self.lr_scheduler = ExponentialLR(self.optimizer, gamma= 0.999993) #Half learning rate after 100.000 steps
+        self.lr_scheduler = ExponentialLR(self.optimizer, gamma= 0.999986) #quarter learning rate after 100.000 steps
 
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = 'cpu'
