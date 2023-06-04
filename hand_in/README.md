@@ -66,3 +66,8 @@ model = NeuralNetworkModel()
 'results'
 -
 This folder contains results achieved with the different methods.
+
+CPU is faster for training (at least with my on my PC)
+
+
+Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor, (Continuous action and state space): https://arxiv.org/abs/1801.01290.

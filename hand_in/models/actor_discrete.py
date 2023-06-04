@@ -38,7 +38,8 @@ class ActorNetwork_disc(torch.nn.Module):
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
 
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = 'cpu'
         self.to(self.device)
         # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
 

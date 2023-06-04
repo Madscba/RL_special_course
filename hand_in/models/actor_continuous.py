@@ -47,8 +47,8 @@ class ActorNetwork_cont(torch.nn.Module):
         #)
 
         # self.apply(self._init_weights)
-        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        # self.device = 'cpu'
+        # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = 'cpu'
         self.to(self.device)
 
     def _init_weights(self, module):

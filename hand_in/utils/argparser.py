@@ -51,7 +51,7 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="SAC_v0"
+            "--algorithm", type=str, default="AC"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
@@ -72,7 +72,7 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.0003,
+            default=1e-5,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -112,7 +112,7 @@ class Parser:
         self.parser.add_argument(
             "--entropy",
             type=bool,
-            default=True,
+            default=False,
             help="add entropy regularization to objective to encourage learning",
         )
 

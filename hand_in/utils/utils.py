@@ -9,7 +9,6 @@ from hand_in.agents.dqn_agent import DQNAgent
 from hand_in.agents.reinforce_agent import ReinforceAgent
 from hand_in.agents.actor_critic_agent import ACAgent
 from hand_in.agents.sac_agent_v0 import SACAgent_v0
-from hand_in.agents.sac_agent_v2 import SACAgent_v2
 
 
 def get_agent(argparser, environments):
@@ -56,12 +55,6 @@ def get_agent(argparser, environments):
                             n_actions=n_actions,
                             action_type=action_type,
         )
-    elif argparser.args.algorithm == "SAC_v2":
-        agent = SACAgent_v2(argparser=argparser,
-                            action_dim=action_dim,
-                            state_dim=state_dim,
-                            n_actions=n_actions,
-                            action_type=action_type, )
     else:
         raise Exception(f"{argparser.args.algorithm}-agent is currently not supported")
     return agent

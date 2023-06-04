@@ -22,6 +22,7 @@ class DQNetwork(torch.nn.Module):
             self.optimizer, gamma=0.99
         )
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+        self.device = 'cpu'
         self.to(self.device)
     def forward(self, x):
         return self.model(torch.Tensor(x))

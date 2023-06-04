@@ -31,7 +31,6 @@ class SACActorNetwork(nn.Module):
 
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = 'cpu'
-
         self.to(self.device)
 
     def forward(self, state):
