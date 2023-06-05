@@ -18,7 +18,7 @@ $file_path = "RL_special_course\hand_in\main.py"
 $full_path = Join-Path -Path $repo_path -ChildPath $file_path
 echo $full_path
 
-& $python_executable1 $full_path --env_name "LunarLander-v2" --visualize False --n_steps 200000 --frame_interval 10000 --n_environments 1 --algorithm "REINFORCE" --gamma 0.95 --hidden_size 32 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05
+& $python_executable1 $full_path --seed 3 --env_name LunarLanderContinuous-v2 --log_format "default" --frame_interval 10000 --visualize 1 --n_steps 400000 --n_env 1 --algorithm SAC_v0 --gamma 0.99 --hidden_size 256 --lr 0.0003 --batch_size 256 --grad_clipping 0 --tau 0.005 --reward_scale 2.0
 
 
 # Check the exit code of the Python script
