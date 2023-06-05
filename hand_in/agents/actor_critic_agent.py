@@ -100,11 +100,7 @@ class ACAgent(BaseAgent):
 
         action, log_probs, entropy, info_dict = self.actor_critic_network.get_action_and_log_prob(state)
         if self.continuous:
-            mu = info_dict["mu"]
-            sigma_sq = info_dict["sigma_sq"]
             policy_response_dict = {
-                "mu": mu,
-                "sigma_sq": sigma_sq,
                 "log_probs": log_probs,
                 "entropy": entropy,
             }

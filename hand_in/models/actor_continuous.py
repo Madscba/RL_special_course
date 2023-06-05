@@ -1,6 +1,7 @@
 import torch
 import os
 import numpy as np
+import torch.nn.functional as F
 from torch.distributions.normal import Normal
 
 
@@ -29,15 +30,12 @@ class ActorNetwork_cont(torch.nn.Module):
 
         self.continuous = True
 
-        self.model = torch.nn.Sequential(
-            torch.nn.Linear(self.input_dim, self.hidden_dim),
-            torch.nn.ReLU(),
-            torch.nn.Linear(self.hidden_dim, self.hidden_dim),
-            torch.nn.ReLU(),
-            #torch.nn.Linear(self.hidden_dim, self.output_dim),
-        )
-        self.mu_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
-        self.sigma_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
+        self.fc1 = torch.nn.Linear(self.input_dim, self.hidden_dim)
+        self.fc2 = torch.nn.Linear(self.hidden_dim, self.hidden_dim)
+        self.mu = torch.nn.Linear(self.hidden_dim, self.output_dim)
+        self.sigma = torch.nn.Linear(self.hidden_dim, self.output_dim)
+        self.value = torch.nn.Linear(self.hidden_dim, 1)
+
 
         #self.log_std = torch.nn.Parameter(torch.ones(self.n_envs, self.output_dim))
         #self.log_std_layer = torch.nn.Linear(self.input_dim, self.output_dim)
@@ -50,33 +48,45 @@ class ActorNetwork_cont(torch.nn.Module):
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = 'cpu'
         self.to(self.device)
+    #
+    # def _init_weights(self, module):
+    #     if isinstance(module, torch.nn.Linear):
+    #         torch.nn.init.normal_(module.weight.data)
+    #         #torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
+    #         if module.bias is not None:
+    #             module.bias.data.zero_()
 
-    def _init_weights(self, module):
-        if isinstance(module, torch.nn.Linear):
-            torch.nn.init.normal_(module.weight.data)
-            #torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
-            if module.bias is not None:
-                module.bias.data.zero_()
+    def forward(self, state):
+        prob = self.fc1(state)
+        prob = F.relu(prob)
+        prob = self.fc2(prob)
+        prob = F.relu(prob)
 
-    def forward(self, x):
-        x = self.model(torch.Tensor(x))
+        mu = self.mu(prob)
+        sigma = self.sigma(prob)
+        sigma = torch.clamp(sigma, min=self.reparam_noise, max=1)
+        print(mu,sigma)
 
-        mu = self.mu_layer(x)
-        sigma_sq = self.sigma_layer(x)
-        sigma_sq = torch.clamp(sigma_sq, min=self.reparam_noise, max=0.999999)
-        # print(mu,sigma_sq)
+        state_value = self.value(prob)
+        return (mu, sigma), state_value
 
-        dist = Normal(mu, sigma_sq)
+        # dist = Normal(mu, sigma_sq)
+        # action = dist.sample()
+        # entropy = dist.entropy()  # Corresponds to 0.5 * ((log_sigma_sq ** 2 * 2 * pi).log() + 1)  # Entropy of gaussian: https://gregorygundersen.com/blog/2020/09/01/gaussian-entropy/
+        #
+        # log_probs = dist.log_prob(action)
+        # log_probs -= torch.log(1 - action.pow(2) + self.reparam_noise) #We don't want value to be 0, so we add a small number (from paper appendix)
+        # #log_probs = log_probs #we need a single number to match the scalar loss but it will be handled later on
+        #
+        #
+        # return action, log_probs, entropy, {"mu": mu, "sigma_sq": sigma_sq, "dist": dist}
+    def get_action_and_log_prob(self,state):
+        (mu, sigma), state_value  = self.forward(state)
+        dist = Normal(mu, sigma)
         action = dist.sample()
-        entropy = dist.entropy()  # Corresponds to 0.5 * ((log_sigma_sq ** 2 * 2 * pi).log() + 1)  # Entropy of gaussian: https://gregorygundersen.com/blog/2020/09/01/gaussian-entropy/
-
+        entropy = dist.entropy()
         log_probs = dist.log_prob(action)
-        log_probs -= torch.log(1 - action.pow(2) + self.reparam_noise) #We don't want value to be 0, so we add a small number (from paper appendix)
-        #log_probs = log_probs #we need a single number to match the scalar loss but it will be handled later on
-
-
-        return action, log_probs, entropy, {"mu": mu, "sigma_sq": sigma_sq, "dist": dist}
-
+        return action, log_probs, entropy, {}
 
     def save_model_checkpoint(self):
         torch.save(self.state_dict(), self.checkpoint_file+'.pt')
