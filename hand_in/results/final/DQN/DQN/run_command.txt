@@ -1,0 +1,1 @@
+python main.py --seed 3 --env_name LunarLander-v2 --log_format "default" --frame_interval 10000 --visualize 0 --n_steps 400000 --n_env 1 --algorithm DQN --gamma 0.95 --hidden_size 32 --lr 0.001 --grad_clipping 0 --tau 0.005 --reward_scale 2.0

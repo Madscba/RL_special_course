@@ -29,7 +29,7 @@ class Parser:
             help="'file' saves .csv, 'console' prints to terminal. 'default' does both",
         )
         self.parser.add_argument(
-            "--visualize", type=bool, default=True, help="Visualize training plots"
+            "--visualize", type=int, default=0, help="Visualize training plots"
         )
 
         # Training config
@@ -51,12 +51,12 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="AC"
+            "--algorithm", type=str, default="DDQN"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.99,
+            default=0.95,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -65,7 +65,7 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=512,
+            default=32,
             metavar="N",
             help="number of hidden units (default: 32)",
         )
@@ -87,7 +87,7 @@ class Parser:
         self.parser.add_argument(
             "--eps_decay",
             type=float,
-            default=0.00005, #0.001
+            default=0.001, #0.001
         )
         self.parser.add_argument(
             "--min_eps",
@@ -99,7 +99,7 @@ class Parser:
             type=int,
             default=128,
         )
-        self.parser.add_argument("--use_replay", type=bool, default=False)
+        self.parser.add_argument("--use_replay", type=int, default=1)
 
         # AC
         self.parser.add_argument(
@@ -111,8 +111,8 @@ class Parser:
         )
         self.parser.add_argument(
             "--entropy",
-            type=bool,
-            default=False,
+            type=int,
+            default=0,
             help="add entropy regularization to objective to encourage learning",
         )
 
