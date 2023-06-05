@@ -226,14 +226,14 @@ class SACAgent_v0(BaseAgent):
         print("saving SAC_v0 models:")
         self.critic_primary.save_model_checkpoint()
         self.critic_secondary.save_model_checkpoint()
-        self.critic_target_primary.save_model_checkpoint()
-        self.critic_target_secondary.save_model_checkpoint()
+        self.value.save_model_checkpoint()
+        self.value_target.save_model_checkpoint()
         self.actor_network.save_model_checkpoint()
 
     def load_models(self):
         print("loading  SAC_v0 models:")
         self.critic_primary.load_model_checkpoint()
         self.critic_secondary.load_model_checkpoint()
-        self.critic_target_primary.load_model_checkpoint()
-        self.critic_target_secondary.load_model_checkpoint()
+        self.value.load_model_checkpoint()
+        self.value_target.load_model_checkpoint()
         self.actor_network.load_model_checkpoint()

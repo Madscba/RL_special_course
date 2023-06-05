@@ -20,6 +20,8 @@ class SACActorNetwork(nn.Module):
         self.name = name
         self.lr = argparser.args.lr
         self.reparam_noise = 1e-6
+        self.checkpoint_file = os.path.join(os.getcwd(),'results/temporary',name+"_SACActor")
+
 
         self.fc1 = nn.Linear(self.input_dim, self.hidden_dim)
         self.fc2 = nn.Linear(self.hidden_dim, self.hidden_dim)
