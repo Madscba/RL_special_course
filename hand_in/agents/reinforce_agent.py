@@ -89,11 +89,11 @@ class ReinforceAgent(BaseAgent):
     ):
         if self.continuous:
             return ActorNetwork_cont(
-                argparser=argparser, action_dim=action_dim, state_dim=state_dim
+                argparser=argparser, action_dim=action_dim, state_dim=state_dim, name = "actor_cont"
             )
         else:
             return ActorNetwork_disc(
-                argparser=argparser, action_dim=action_dim, state_dim=state_dim
+                argparser=argparser, action_dim=action_dim, state_dim=state_dim, name = "actor_disc"
             )
 
     def save_models(self):
