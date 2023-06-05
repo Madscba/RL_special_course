@@ -127,7 +127,7 @@ class SACAgent_v0(BaseAgent):
         self.actor_network.optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
         self.actor_network.optimizer.step()
-        self.actor_network.lr_scheduler.step()
+        # self.actor_network.lr_scheduler.step()
 
     def get_actor_loss(self, state):
         actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)

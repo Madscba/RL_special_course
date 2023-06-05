@@ -37,8 +37,11 @@ class ReplayBuffer:
             return torch.zeros((2 * self.state_dim + self.n_actions + 2, capacity))
 
     def save_event(
-        self, state, action, reward, next_state, terminated, policy_response_dict
+        self, state, action, reward, next_state, terminated, policy_response_dict, info
     ):
+        if not len(info.keys())==0: #If environment terminates, then new_state will be the state of the reset environment
+            next_state = info['final_observation'][0].reshape(1,-1)
+
         if self.used_for_policy_gradient_method:
             self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
                 (

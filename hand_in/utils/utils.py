@@ -75,7 +75,7 @@ def evaluate_agent(agent, env_name, num_episodes=1, render=True):
             if render:
                 env.render()
 
-            action,_ = agent.follow_policy(observation)
+            action,_ = agent.follow_policy(observation.reshape(1,-1))
             next_observation, reward, done, _ = env.step(action.squeeze())
 
             episode_reward += reward
@@ -92,6 +92,19 @@ def evaluate_agent(agent, env_name, num_episodes=1, render=True):
     # plt.ylabel('Reward')
     # plt.title('Agent Evaluation')
     # plt.show()
+
+def get_observed_next_state(new_state,info):
+    """
+    function that return the next observed state.
+    This function is needed because in the case of termination, the returned value "new_state" from the environment will
+    be from a new and reset enviroment. The actual next state, which is the terminated state, will be returned in the info
+    dictionary, and should be extracted to have the proper next_observed state the agent can learn from.
+    """
+    if not len(info.keys()) == 0:
+        return info['final_observation'][0].reshape(1,-1)
+    else:
+        return new_state
+
 
 def set_seed(seed: int = 3):
     np.random.seed(seed)

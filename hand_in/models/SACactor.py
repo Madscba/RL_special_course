@@ -14,20 +14,20 @@ class SACActorNetwork(nn.Module):
         action_dim,
         name):
         super(SACActorNetwork, self).__init__()
-        self.input_dims = state_dim
+        self.input_dim = state_dim
         self.hidden_dim = argparser.args.hidden_size
         self.output_dim = action_dim
         self.name = name
         self.lr = argparser.args.lr
         self.reparam_noise = 1e-6
 
-        self.fc1 = nn.Linear(self.input_dims, self.hidden_dim)
+        self.fc1 = nn.Linear(self.input_dim, self.hidden_dim)
         self.fc2 = nn.Linear(self.hidden_dim, self.hidden_dim)
         self.mu = nn.Linear(self.hidden_dim, self.output_dim)
         self.sigma = nn.Linear(self.hidden_dim, self.output_dim)
 
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        self.lr_scheduler = ExponentialLR(self.optimizer, gamma= 0.999986) #quarter learning rate after 100.000 steps
+        # self.lr_scheduler = ExponentialLR(self.optimizer, gamma= 0.999986) #quarter learning rate after 100.000 steps
 
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = 'cpu'

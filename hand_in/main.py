@@ -11,7 +11,7 @@ repo_root = os.path.abspath(os.path.join(script_dir, ".."))
 sys.path.append(repo_root)
 
 from hand_in.utils.argparser import Parser
-from hand_in.utils.utils import set_seed, evaluate_agent
+from hand_in.utils.utils import set_seed, evaluate_agent, get_observed_next_state
 from hand_in.environment.gym_environment import get_envs
 from hand_in.utils.logger import get_logger
 from hand_in.utils.utils import get_agent
@@ -47,28 +47,23 @@ if __name__ == "__main__":
         action, policy_response_dict = a.follow_policy(state)
         # take action A and observe rew, new_state
         new_state, reward, terminated, truncated, info = e.step(action)
-        # Save history (replay buffer) - not needed for DQN
-        if not len(info.keys())==0:
-            if a.uses_replay_buffer():
-                final_obs = info['final_observation'][0].reshape(1,-1)
-                a.replay_buffer.save_event(state, action, reward, final_obs, terminated, policy_response_dict)
-        else:
-            if a.uses_replay_buffer():
-                a.replay_buffer.save_event(state, action, reward, new_state, terminated, policy_response_dict)
 
-        a.update_policy(
-            state, action, reward, new_state, terminated, policy_response_dict
-        )
+        observed_next_state = get_observed_next_state(new_state, info)
+        if a.uses_replay_buffer():
+            a.replay_buffer.save_event(state, action, reward, observed_next_state, terminated, policy_response_dict, info)
+
+        a.update_policy(state, action, reward, observed_next_state, terminated, policy_response_dict)
+
         state = new_state
 
         l.log_step(reward)
 
         if terminated or l.current_episode_frame_counter > 1000:
-            state, _ = e.reset()
+            # state, _ = e.reset()
             terminated = False
             l.log_episode()
-            # if l.episode_counter % 50 == 0:
-            #     evaluate_agent(a, p.args.env_name, num_episodes=3)
+            if l.episode_counter % 200 == 0:
+                evaluate_agent(a, p.args.env_name, num_episodes=3)
 
 
 

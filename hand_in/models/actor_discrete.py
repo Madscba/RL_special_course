@@ -13,8 +13,6 @@ class ActorNetwork_disc(torch.nn.Module):
         state_dim,
         action_dim,
         name,
-        #        action_upper_bound: float = 1,
-        #        action_lower_bound: float = -1,
     ):
         super(ActorNetwork_disc, self).__init__()
         self.input_dim = state_dim
@@ -23,41 +21,47 @@ class ActorNetwork_disc(torch.nn.Module):
         self.hidden_dim = argparser.args.hidden_size
         self.checkpoint_file = os.path.join(os.getcwd(),'results/temporary',name+"_actor_d")
         self.lr = argparser.args.lr
-        self.reparam_noise = 1e-6
-        # self.action_space_range = action_upper_bound - action_lower_bound
-        # self.action_space_center = self.action_space_range / 2
         self.continuous = False
 
-        self.model = torch.nn.Sequential(
-            torch.nn.Linear(self.input_dim, self.hidden_dim),
-            torch.nn.ReLU(),
-            torch.nn.Linear(self.hidden_dim, self.hidden_dim),
-            torch.nn.ReLU(),
-            torch.nn.Linear(self.hidden_dim, self.output_dim),
-        )
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), self.lr)
+        # self.model = torch.nn.Sequential(
+        #     torch.nn.Linear(self.input_dim, self.hidden_dim),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Linear(self.hidden_dim, self.hidden_dim),
+        #     torch.nn.ReLU(),
+        #     # torch.nn.Linear(self.hidden_dim, self.output_dim),
+        # )
+        self.fc1 = torch.nn.Linear(self.input_dim, self.hidden_dim)
+        self.fc2 = torch.nn.Linear(self.hidden_dim, self.hidden_dim)
+
+        self.action_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
+        self.value_layer = torch.nn.Linear(self.hidden_dim, 1)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+
+        # self.optimizer = torch.optim.Adam(list(self.model.parameters()) + list(self.action_layer.parameters()) + list(self.value_layer.parameters()), self.lr)
 
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = 'cpu'
         self.to(self.device)
         # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
 
-    #     self.apply(self._init_weights)
-
-    # def _init_weights(self, module):
-    #     if isinstance(module, torch.nn.Linear):
-    #         torch.nn.init.kaiming_normal_(module.weight.data, a=0, mode='fan_in', nonlinearity='leaky_relu')
-    #         if module.bias is not None:
-    #             module.bias.data.zero_()
 
     def forward(self, x):
-        x = self.model(torch.Tensor(x))
-        action_probs = F.softmax(x)
+
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.fc2(x)
+        x = F.relu(x)
+
+        # x = self.model(torch.Tensor(x))
+        action_values = self.action_layer(x)
+        state_values = self.value_layer(x)
+        return (action_values,state_values)
+
+    def get_action_and_log_prob(self,state):
+        action_values, state_values = self.forward(state)
+        action_probs = F.softmax(action_values,dim=2)
         dist = Categorical(action_probs)
-        assert (
-            abs(float(action_probs.sum()) - round(float(action_probs.sum()), 0)) < 0.01
-        )
         action = dist.sample()
         entropy = dist.entropy()
         log_probs = dist.log_prob(action)
