@@ -16,7 +16,8 @@ class DQNAgent(BaseAgent):
         self.DQN = DQNetwork(
             argparser=argparser, state_dim=state_dim, action_dim=action_dim, name ="DQN"
         )
-        if use_DDQN:
+        self.use_DDQN = use_DDQN
+        if self.use_DDQN:
             self.target_DQN = DQNetwork(
                 argparser=argparser, state_dim=state_dim, action_dim=action_dim, name ="target_DQN"
             )
@@ -212,3 +213,15 @@ class DQNAgent(BaseAgent):
                         "Average goal of 250 has been reached, and training is terminated"
                     )
                     break
+
+    def save_models(self):
+        print("saving DQN/DDQN models:")
+        if self.use_DDQN:
+            self.target_DQN.save_model_checkpoint()
+        self.DQN.save_model_checkpoint()
+
+    def load_models(self):
+        print("loading DQN/DDQN models:")
+        if self.use_DDQN:
+            self.target_DQN.load_model_checkpoint()
+        self.DQN.load_model_checkpoint()

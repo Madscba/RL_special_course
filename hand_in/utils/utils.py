@@ -60,9 +60,9 @@ def get_agent(argparser, environments):
     return agent
 
 
-def evaluate_agent(agent, env_name, num_episodes=1, render=True):
+def evaluate_agent(agent, env_name, num_episodes=1, render=True,best_model:bool=False):
     env = gym.make(env_name)
-    env = RecordVideo(env, './results/temporary/video', episode_trigger=lambda episode_number: True)
+    env = RecordVideo(env, './results/temporary/video', episode_trigger=lambda episode_number: best_model)
 
     episode_rewards = []
 

@@ -97,10 +97,12 @@ class ReinforceAgent(BaseAgent):
             )
 
     def save_models(self):
-        pass
+        print("saving reinforce models:")
+        self.actor_network.save_model_checkpoint()
 
     def load_models(self):
-        pass
+        print("loading reinforce models:")
+        self.actor_network.load_model_checkpoint()
 
     def uses_replay_buffer(self):
         """REINFORCE use an episode buffer"""

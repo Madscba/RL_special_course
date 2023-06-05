@@ -66,7 +66,7 @@ class RLLogger:
             f"\nEpisode {self.episode_counter}: Reward = {reward =:.2f}, Length = {length:.2f}"
         )
 
-        print(f"Avg rew 50epi: {np.mean(self.episode_rewards[:self.episode_counter - 1][-50:])}")
+        print(f"Avg rew 50epi: {self.get_avg_reward_last_episodes(x_latest_episodes=50)}")
 
 
     def _write_to_file(self):
@@ -136,7 +136,8 @@ class RLLogger:
         plt.savefig(f'avg_step_rew_{self.run_name}.png')
         plt.show()
 
-
+    def get_avg_reward_last_episodes(self,x_latest_episodes:int=50):
+        return np.mean(self.episode_rewards[:self.episode_counter - 1][-x_latest_episodes:])
 def get_logger(argparser):
     logger = RLLogger(argparser)
     return logger

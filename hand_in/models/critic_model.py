@@ -33,7 +33,7 @@ class CriticNetwork(torch.nn.Module):
 
 
     def save_model_checkpoint(self):
-        torch.save(self.state_dict(), self.checkpoint_file)
+        torch.save(self.state_dict(), self.checkpoint_file+'.pt')
 
     def load_model_checkpoint(self):
-        self.load_state_dict(torch.load(self.checkpoint_file))
+        self.load_state_dict(torch.load(self.checkpoint_file+'.pt'))
