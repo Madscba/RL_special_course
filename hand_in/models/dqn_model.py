@@ -6,7 +6,7 @@ class DQNetwork(torch.nn.Module):
         super(DQNetwork, self).__init__()
         self.input_dim = state_dim
         self.output_dim = action_dim
-        self.checkpoint_dir = os.path.join(os.getcwd(),'results/temporary',name+"_DQN")
+        self.checkpoint_file = os.path.join(os.getcwd(),'results/temporary',name+"_DQN")
         self.use_replay = argparser.args.use_replay
         self.model = torch.nn.Sequential(
             torch.nn.Linear(self.input_dim, 64),
@@ -33,8 +33,7 @@ class DQNetwork(torch.nn.Module):
             return self.model(torch.Tensor(state))
 
     def save_model_checkpoint(self):
-        torch.save(self.state_dict(), self.checkpoint_file)
+        torch.save(self.state_dict(), self.checkpoint_file+'.pt')
 
     def load_model_checkpoint(self):
-        self.load_state_dict(torch.load(self.checkpoint_file))
-
+        self.load_state_dict(torch.load(self.checkpoint_file+'.pt'))

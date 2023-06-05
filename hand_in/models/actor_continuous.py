@@ -74,27 +74,14 @@ class ActorNetwork_cont(torch.nn.Module):
         log_probs -= torch.log(1 - action.pow(2) + self.reparam_noise) #We don't want value to be 0, so we add a small number (from paper appendix)
         #log_probs = log_probs #we need a single number to match the scalar loss but it will be handled later on
 
-        # mean_value = self.get_mean_parameter_value(self)
-        # print("Mean parameter value:", mean_value.item())
 
         return action, log_probs, entropy, {"mu": mu, "sigma_sq": sigma_sq, "dist": dist}
 
 
     def save_model_checkpoint(self):
-        torch.save(self.state_dict(), self.checkpoint_file)
+        torch.save(self.state_dict(), self.checkpoint_file+'.pt')
 
     def load_model_checkpoint(self):
-        self.load_state_dict(torch.load(self.checkpoint_file))
+        self.load_state_dict(torch.load(self.checkpoint_file+'.pt'))
 
 
-    def get_mean_parameter_value(self, model):
-        parameters = model.parameters()
-        total_params = 0
-        total_value = 0
-
-        for param in parameters:
-            total_params += param.numel()
-            total_value += torch.sum(param.data)
-
-        mean_value = total_value / total_params
-        return mean_value

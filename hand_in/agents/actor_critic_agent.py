@@ -125,10 +125,13 @@ class ACAgent(BaseAgent):
             )
 
     def save_models(self):
-        pass
+        print("saving actor critic models:")
+        self.actor_critic_network.save_model_checkpoint()
 
     def load_models(self):
-        pass
+        print("loading actor critic models:")
+        self.actor_critic_network.load_model_checkpoint()
+
 
     def uses_replay_buffer(self):
         """Replay buffer appears to hurt the stability of learning and is hence turned off"""
