@@ -12,7 +12,7 @@ class Parser:
 
         # Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLanderContinuous-v2"
+            "--env_name", type=str, default="LunarLander-v2"
         )
 
         # Logger config
@@ -29,14 +29,14 @@ class Parser:
             help="'file' saves .csv, 'console' prints to terminal. 'default' does both",
         )
         self.parser.add_argument(
-            "--visualize", type=bool, default=True, help="Visualize training plots"
+            "--visualize", type=int, default=0, help="Visualize training plots"
         )
 
         # Training config
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=200000,
+            default=100000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -51,12 +51,12 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="AC"
+            "--algorithm", type=str, default="DDQN"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.99,
+            default=0.95,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -65,14 +65,14 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=256,
+            default=32,
             metavar="N",
             help="number of hidden units (default: 32)",
         )
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=1e-5,
+            default=0.001,
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -87,19 +87,19 @@ class Parser:
         self.parser.add_argument(
             "--eps_decay",
             type=float,
-            default=0.0005, #0.001
+            default=0.001, #0.001
         )
         self.parser.add_argument(
             "--min_eps",
             type=float,
-            default=0.1, #0.05
+            default=0.05, #0.05
         )
         self.parser.add_argument(
             "--batch_size",
             type=int,
-            default=256,
+            default=32,
         )
-        self.parser.add_argument("--use_replay", type=bool, default=True)
+        self.parser.add_argument("--use_replay", type=int, default=1)
 
         # AC
         self.parser.add_argument(
@@ -111,8 +111,8 @@ class Parser:
         )
         self.parser.add_argument(
             "--entropy",
-            type=bool,
-            default=False,
+            type=int,
+            default=0,
             help="add entropy regularization to objective to encourage learning",
         )
 

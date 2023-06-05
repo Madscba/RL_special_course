@@ -14,12 +14,15 @@ class DQNAgent(BaseAgent):
         self, argparser, use_DDQN: bool, state_dim: int, action_dim: int, n_actions: int
     ):
         self.DQN = DQNetwork(
-            argparser=argparser, state_dim=state_dim, action_dim=action_dim
+            argparser=argparser, state_dim=state_dim, action_dim=action_dim, name ="DQN"
         )
         if use_DDQN:
             self.target_DQN = DQNetwork(
-                argparser=argparser, state_dim=state_dim, action_dim=action_dim
+                argparser=argparser, state_dim=state_dim, action_dim=action_dim, name ="target_DQN"
             )
+        else:
+            self.target_DQN = 0
+        self.parser = argparser
         self.eps = argparser.args.eps
         self.eps_decay = argparser.args.eps_decay
         self.min_eps = argparser.args.min_eps
@@ -127,11 +130,7 @@ class DQNAgent(BaseAgent):
             )
 
             loss = self.DQN.criterion(
-                q_values.squeeze()[
-                    torch.arange(self.batch_size), actions.squeeze().long()
-                ],
-                target,
-            )
+                q_values.squeeze()[torch.arange(self.batch_size), actions.squeeze().long()],target)
             self.DQN.optimizer.zero_grad()
             loss.backward()
             # for p in self.DQN.parameters():
