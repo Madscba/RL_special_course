@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=100000,
+            default=400000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -51,12 +51,12 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="DDQN"
+            "--algorithm", type=str, default="REINFORCE"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
             type=float,
-            default=0.95,
+            default=0.99,
             metavar="G",
             help="discount factor for reward (default: 0.999)",
         )
@@ -65,14 +65,14 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=32,
+            default=256,
             metavar="N",
             help="number of hidden units (default: 32)",
         )
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.00001, #0.00001
+            default=0.001, #0.00001
             metavar="N",
             help="learning rate (default: 0.001)",
         )

@@ -19,6 +19,7 @@ class ReplayBuffer:
         n_actions: int = 2,
         batch_size: int = 64,
         used_for_policy_gradient_method: bool = False,
+        store_on_GPU_w_grad: bool = False
     ):
         self.capacity = int(capacity)
         self.event_idx = 0
@@ -26,6 +27,7 @@ class ReplayBuffer:
         self.action_dim = action_dim
         self.n_actions = n_actions
         self.used_for_policy_gradient_method = used_for_policy_gradient_method
+        self.store_on_GPU_w_grad = store_on_GPU_w_grad
         self.event_tuples = self.initialize_array(self.capacity)
         # ('state','action','reward',next_state','terminated')
         self.batch_size = batch_size
@@ -43,17 +45,30 @@ class ReplayBuffer:
             next_state = info['final_observation'][0].reshape(1,-1)
 
         if self.used_for_policy_gradient_method:
-            self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
-                (
-                    torch.from_numpy(state).cpu(),
-                    torch.from_numpy(action).reshape(-1, self.n_actions).cpu(),
-                    torch.from_numpy(reward.reshape(-1, 1)).cpu(),
-                    torch.from_numpy(next_state).cpu(),
-                    torch.from_numpy(terminated.reshape(-1, 1)).cpu(),
-                    policy_response_dict["log_probs"].reshape(-1, self.n_actions).detach().cpu(),
-                    policy_response_dict["entropy"].reshape(-1, self.n_actions).detach().cpu(),
+            if not self.store_on_GPU_w_grad:
+                self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
+                    (
+                        torch.from_numpy(state).cpu(),
+                        torch.from_numpy(action).reshape(-1, self.n_actions).cpu(),
+                        torch.from_numpy(reward.reshape(-1, 1)).cpu(),
+                        torch.from_numpy(next_state).cpu(),
+                        torch.from_numpy(terminated.reshape(-1, 1)).cpu(),
+                        policy_response_dict["log_probs"].reshape(-1, self.n_actions).detach().cpu(),
+                        policy_response_dict["entropy"].reshape(-1, self.n_actions).detach().cpu(),
+                    )
                 )
-            )
+            else:
+                self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
+                    (
+                        torch.from_numpy(state),
+                        torch.from_numpy(action).reshape(-1, self.n_actions),
+                        torch.from_numpy(reward.reshape(-1, 1)),
+                        torch.from_numpy(next_state),
+                        torch.from_numpy(terminated.reshape(-1, 1)),
+                        policy_response_dict["log_probs"].reshape(-1, self.n_actions),
+                        policy_response_dict["entropy"].reshape(-1, self.n_actions).detach(),
+                    )
+                )
         else:
             self.event_tuples[:, self.event_idx % self.capacity] = torch.hstack(
                 (
@@ -91,7 +106,7 @@ class ReplayBuffer:
         terminated, or having reached the maximum allowed amount of steps."""
         if self.used_for_policy_gradient_method:
             return (
-                self.event_tuples[-1 - 2 * self.n_actions, self.event_idx - 1]
+                bool(self.event_tuples[-1 - 2 * self.n_actions, self.event_idx - 1])
                 or self.event_idx >= 1000
             )
         else:

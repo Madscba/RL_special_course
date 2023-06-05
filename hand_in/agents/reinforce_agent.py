@@ -24,10 +24,9 @@ class ReinforceAgent(BaseAgent):
             action_dim=action_dim,
             n_actions=n_actions,
             used_for_policy_gradient_method=True,
+            store_on_GPU_w_grad = True
         )
 
-    def initialize_policy(self):
-        pass
 
     def update_policy(
         self, state, action, reward, new_state, terminated, policy_response_dict: dict
@@ -39,18 +38,35 @@ class ReinforceAgent(BaseAgent):
             episode_history = self.replay_buffer.get_episode_hist()
             rel_episode_hist = episode_history.clone()
             rel_rewards = rel_episode_hist[
-                self.actor_network.input_dim + self.n_actions, :
-            ].clone()
+                          self.actor_network.input_dim + self.n_actions, :
+                          ]
             log_prob_idx = 2 * self.actor_network.input_dim + self.n_actions + 2
             # ('state','action','reward',next_state','terminated', log_probs, entropy)
             rel_log_probs = rel_episode_hist[
-                log_prob_idx : log_prob_idx + self.n_actions, :
-            ].clone()
-            G = torch.zeros(1, 1, requires_grad=False)
-            loss = Variable(torch.Tensor([0]), requires_grad=True)  # reset loss to zero
-            for t in reversed(range(episode_history.shape[1])):
-                G = self.parser.args.gamma * G + rel_rewards[t]
-                loss = loss - (rel_log_probs[:, t] * G).sum()
+                            log_prob_idx : log_prob_idx + self.n_actions, :
+                            ].squeeze(0)
+            discounted_rewards = torch.zeros_like(rel_rewards)
+
+            for i in range(episode_history.shape[1]):
+                g_total = torch.zeros(1, 1, requires_grad=False)
+                r_discount = 1
+                for j in range(i,episode_history.shape[1]):
+                    g_total += rel_rewards[j] * r_discount
+                    r_discount *= self.parser.args.gamma
+                discounted_rewards[i] = g_total
+
+
+            r_mean = discounted_rewards.mean()
+            r_std = discounted_rewards.std()
+            normalized_rewards = (discounted_rewards - r_mean) / r_std
+            # for t in reversed(range(episode_history.shape[1])):
+            #     G = self.parser.args.gamma * G + rel_rewards[t]
+            #     loss = loss - (rel_log_probs[:, t] * G).sum()
+
+            # loss = Variable(torch.Tensor([0]), requires_grad=True)  # reset loss to zero
+            loss = 0  # reset loss to zero
+            for (rew,log_prob) in zip(normalized_rewards,rel_log_probs):
+                loss += -rew * log_prob
 
             self.actor_network.optimizer.zero_grad()
             loss.backward()  # set retain_graph to True
@@ -67,22 +83,23 @@ class ReinforceAgent(BaseAgent):
             self.replay_buffer.reset()
 
     def follow_policy(self, state):
-        state_tensor = torch.from_numpy(state).float()
-        action, log_probs, entropy, info_dict = self.actor_network(state_tensor)
+        if not isinstance(state, torch.Tensor):
+            state = torch.Tensor([state]).to(self.actor_network.device)
+
 
         if self.continuous:
-            print("potentially worth logging mu and std")
-            mu = info_dict["mu"]
-            sigma_sq = info_dict["sigma_sq"]
+            action, log_probs, entropy, info_dict = self.actor_network(state)
+        else:
+            action, log_probs, entropy, info_dict = self.actor_network.get_action_and_log_prob(state)
+
+        if self.continuous:
             policy_response_dict = {
-                "mu": mu,
-                "sigma_sq": sigma_sq,
                 "log_probs": log_probs,
                 "entropy": entropy,
             }
         else:
             policy_response_dict = {"log_probs": log_probs, "entropy": entropy}
-        return action.numpy(), policy_response_dict
+        return action.numpy()[0], policy_response_dict
 
     def init_actor_network(
         self, argparser, action_dim, state_dim, n_actions, action_type

@@ -3,9 +3,11 @@
 *.pyc
 *.mp4
 *.json
+*.pt
 
 ./*.pickle
 ./*.png
 ./*.pyc
 ./*.mp4
 ./*.json
+./*.pt
