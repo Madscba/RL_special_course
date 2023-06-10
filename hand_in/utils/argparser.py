@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=400000,
+            default=600000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -65,7 +65,7 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=256,
+            default=512,
             metavar="N",
             help="number of hidden units (default: 32)",
         )

@@ -33,7 +33,7 @@ class ActorNetwork_cont(torch.nn.Module):
         self.fc1 = torch.nn.Linear(self.input_dim, self.hidden_dim)
         self.fc2 = torch.nn.Linear(self.hidden_dim, self.hidden_dim)
         self.mu = torch.nn.Linear(self.hidden_dim, self.output_dim)
-        self.sigma = torch.nn.Linear(self.hidden_dim, self.output_dim)
+        self.sigma =torch.nn.parameter.Parameter(torch.Tensor([0.5]))
         self.value = torch.nn.Linear(self.hidden_dim, 1)
 
 
@@ -63,9 +63,10 @@ class ActorNetwork_cont(torch.nn.Module):
         prob = F.relu(prob)
 
         mu = self.mu(prob)
-        sigma = self.sigma(prob)
-        sigma = torch.clamp(sigma, min=self.reparam_noise, max=1)
-        print(mu,sigma)
+        sigma = self.sigma
+        sigma = torch.exp(sigma)
+        # sigma = torch.clamp(sigma, min=self.reparam_noise, max=1)
+        #print(mu,sigma)
 
         state_value = self.value(prob)
         return (mu, sigma), state_value
@@ -86,7 +87,7 @@ class ActorNetwork_cont(torch.nn.Module):
         action = dist.sample()
         entropy = dist.entropy()
         log_probs = dist.log_prob(action)
-        return action, log_probs, entropy, {}
+        return torch.tanh(action), log_probs, entropy, {}
 
     def save_model_checkpoint(self):
         torch.save(self.state_dict(), self.checkpoint_file+'.pt')

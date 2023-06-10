@@ -55,8 +55,8 @@ if __name__ == "__main__":
         if avg_epi_score > best_avg_epi_score:
             best_avg_epi_score = avg_epi_score
             a.save_models()
-            if l.episode_counter % 50 == 0:
-                evaluate_agent(a, p.args.env_name, num_episodes=5, render=False, best_model=True)
+            # if l.episode_counter % 50 == 0:
+            #     evaluate_agent(a, p.args.env_name, num_episodes=5, render=False, best_model=True)
 
 
 

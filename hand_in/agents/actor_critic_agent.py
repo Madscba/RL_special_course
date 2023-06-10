@@ -18,12 +18,12 @@ class ACAgent(BaseAgent):
         self.action_dim = action_dim
         self.state_dim = state_dim
         self.n_actions = n_actions
-        self.actor_critic_network = self.init_actor_network(
+        self.actor_network = self.init_actor_network(
             argparser, action_dim, state_dim, n_actions, action_type
         )
-        # self.critic_network = CriticNetwork(
-        #     argparser, state_dim, action_dim, n_actions, action_type, name="critic"
-        # )
+        self.critic_network = CriticNetwork(
+            argparser, state_dim, action_dim, n_actions, action_type, name="critic"
+        )
         if self.parser.args.use_replay:
             self.replay_buffer = ReplayBuffer(
                 capacity=1005,
@@ -53,9 +53,9 @@ class ACAgent(BaseAgent):
 
         # Calculate reward and critic estimate
 
-        _, critic_value = self.actor_critic_network.forward(torch.Tensor(states))
+        critic_value = self.critic_network.forward(torch.Tensor(states))
         critic_value = critic_value.view(-1)
-        _, critic_value_ = self.actor_critic_network.forward(torch.Tensor(new_states))
+        critic_value_ = self.critic_network.forward(torch.Tensor(new_states))
         critic_value_ = critic_value_.view(-1)
         terminated_idx = np.where(terminated == 1)[0]
         critic_value_[terminated_idx] = 0
@@ -65,40 +65,40 @@ class ACAgent(BaseAgent):
 
         # Calculate losses for actor and critic
         value_loss = td_err**2
-        if self.continuous:
-            action_loss = -(log_probs.sum(2).view(-1) * td_err)
-        else:
-            action_loss = -(log_probs.view(-1) * td_err)
-        # add entropy
-        if self.parser.args.entropy:
-            action_loss += (0.5 * (entropy.squeeze(0)).sum())
         # Update networks
-        losses = value_loss + action_loss
-        losses.backward()
-        # self.critic_network.optimizer.zero_grad()
-        # value_loss.backward(retain_graph=True)
+        # losses = value_loss + action_loss
+        # losses.backward()
+        self.critic_network.optimizer.zero_grad()
+        value_loss.backward()
         # if self.parser.args.grad_clipping:
         #     torch.nn.utils.clip_grad_norm_(
         #         [p for g in self.critic_network.optimizer.param_groups for p in g["params"]],
         #         self.parser.args.grad_clipping,
         #     )
-        # self.critic_network.optimizer.step()
+        self.critic_network.optimizer.step()
 
-        self.actor_critic_network.optimizer.zero_grad()
-        # action_loss.backward()
+        if self.continuous:
+            action_loss = -(log_probs.sum(2).view(-1) * td_err.clone().detach())
+        else:
+            action_loss = -(log_probs.view(-1) * td_err)
+        # add entropy
+        if self.parser.args.entropy:
+            action_loss += (0.5 * (entropy.squeeze(0)).sum())
+        self.actor_network.optimizer.zero_grad()
+        action_loss.backward()
         if self.parser.args.grad_clipping:
             torch.nn.utils.clip_grad_norm_(
-                [p for g in self.actor_critic_network.optimizer.param_groups for p in g["params"]],
+                [p for g in self.actor_network.optimizer.param_groups for p in g["params"]],
                 self.parser.args.grad_clipping,
             )
-        self.actor_critic_network.optimizer.step()
+        self.actor_network.optimizer.step()
 
     def follow_policy(self, state):
         if not isinstance(state, torch.Tensor):
-            state = torch.Tensor([state]).to(self.actor_critic_network.device)
+            state = torch.Tensor([state]).to(self.actor_network.device)
 
 
-        action, log_probs, entropy, info_dict = self.actor_critic_network.get_action_and_log_prob(state)
+        action, log_probs, entropy, info_dict = self.actor_network.get_action_and_log_prob(state)
         if self.continuous:
             policy_response_dict = {
                 "log_probs": log_probs,
@@ -122,11 +122,11 @@ class ACAgent(BaseAgent):
 
     def save_models(self):
         print("saving actor critic models:")
-        self.actor_critic_network.save_model_checkpoint()
+        self.actor_network.save_model_checkpoint()
 
     def load_models(self):
         print("loading actor critic models:")
-        self.actor_critic_network.load_model_checkpoint()
+        self.actor_network.load_model_checkpoint()
 
 
     def uses_replay_buffer(self):
