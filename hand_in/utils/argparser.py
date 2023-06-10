@@ -12,7 +12,7 @@ class Parser:
 
         # Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLanderContinuous-v2"
+            "--env_name", type=str, default="LunarLander-v2"
         )
 
         # Logger config

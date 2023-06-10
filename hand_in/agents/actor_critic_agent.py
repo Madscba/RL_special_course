@@ -80,7 +80,7 @@ class ACAgent(BaseAgent):
         if self.continuous:
             action_loss = -(log_probs.sum(2).view(-1) * td_err.clone().detach())
         else:
-            action_loss = -(log_probs.view(-1) * td_err)
+            action_loss = -(log_probs.view(-1) * td_err.clone().detach())
         # add entropy
         if self.parser.args.entropy:
             action_loss += (0.5 * (entropy.squeeze(0)).sum())

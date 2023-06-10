@@ -88,7 +88,7 @@ class ReinforceAgent(BaseAgent):
 
 
         if self.continuous:
-            action, log_probs, entropy, info_dict = self.actor_network(state)
+            action, log_probs, entropy, info_dict = self.actor_network.get_action_and_log_prob(state)
         else:
             action, log_probs, entropy, info_dict = self.actor_network.get_action_and_log_prob(state)
 
