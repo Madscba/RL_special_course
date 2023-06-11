@@ -63,6 +63,8 @@ class ReinforceAgent(BaseAgent):
             #     G = self.parser.args.gamma * G + rel_rewards[t]
             #     loss = loss - (rel_log_probs[:, t] * G).sum()
 
+            if self.continuous:
+                rel_log_probs = rel_log_probs.sum(dim=0)
             # loss = Variable(torch.Tensor([0]), requires_grad=True)  # reset loss to zero
             loss = 0  # reset loss to zero
             for (rew,log_prob) in zip(normalized_rewards,rel_log_probs):

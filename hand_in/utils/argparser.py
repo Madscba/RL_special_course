@@ -12,7 +12,7 @@ class Parser:
 
         # Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLander-v2"
+            "--env_name", type=str, default="LunarLanderContinuous-v2"
         )
 
         # Logger config
@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=600000,
+            default=200000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -51,7 +51,7 @@ class Parser:
         # learning algorithm configuration
 
         self.parser.add_argument(
-            "--algorithm", type=str, default="AC"
+            "--algorithm", type=str, default="REINFORCE"
         )  # DDQN, REINFORCE, AC, SAC
         self.parser.add_argument(
             "--gamma",
