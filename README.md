@@ -13,7 +13,7 @@ Python version 3.8.6 was used for this project.
 A typical requirement when the ´Gymnasium´ environments such as LunarLander are used is the module [Swig](www.swig.org/download.html), which need to be downloaded and setup according to their guide.
 ```
 git clone 
-pip install -r requirements.txt
+conda env create --name rl_venv --file environment.yml 
 ```
 main.py
 -
@@ -28,11 +28,11 @@ DDQN:
 python main.py --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "DDQN" --gamma 0.99 --hidden_size 64 --lr 0.001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --batch_size 32 --use_replay 1
 
 
-![Image](/hand_in/results/final/DDQN/avg_step_episode.png)
+![Image](/hand_in/results/final/DDQN/avg_frame_rewards.png)
 
-![Image](/hand_in/results/final/DDQN/length_episode.png)
+![Image](/hand_in/results/final/DDQN/episode_lengths.png)
 
-![Image](/hand_in/results/final/DDQN/rew_episode.png)
+![Image](/hand_in/results/final/DDQN/episode_rewards.png)
 
 
 REINFORCE (discrete):
@@ -42,11 +42,11 @@ python main.py --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --fram
 
 
 
-![Image](/hand_in/results/final/REINFORCE/discrete/avg_step_episode.png)
+![Image](/hand_in/results/final/REINFORCE/discrete/avg_frame_rewards.png)
 
-![Image](/hand_in/results/final/REINFORCE/discrete/length_episode.png)
+![Image](/hand_in/results/final/REINFORCE/discrete/episode_lengths.png)
 
-![Image](/hand_in/results/final/REINFORCE/discrete/rew_episode.png)
+![Image](/hand_in/results/final/REINFORCE/discrete/episode_rewards.png)
 
 REINFORCE (continuous):
 -------------
@@ -55,11 +55,11 @@ python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 400
 
 
 
-![Image](/hand_in/results/final/REINFORCE/continuous/avg_step_episode.png)
+![Image](/hand_in/results/final/REINFORCE/continuous/x.png)
 
-![Image](/hand_in/results/final/REINFORCE/continuous/length_episode.png)
+![Image](/hand_in/results/final/REINFORCE/continuous/x.png)
 
-![Image](/hand_in/results/final/REINFORCE/continuous/rew_episode.png)
+![Image](/hand_in/results/final/REINFORCE/continuous/x.png)
 
 Actor-Critic (continuous)
 -------------
@@ -67,23 +67,22 @@ Actor-Critic (continuous)
 python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600000 --frame_interval 10000 --n_environments 1 --algorithm "AC" --gamma 0.99 --hidden_size 512 --lr 0.0001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --grad_clipping 0
 
 
-![Image](/hand_in/results/final/AC/continuous/avg_step_episode.png)
+![Image](/hand_in/results/final/AC/continuous/x.png)
 
-![Image](/hand_in/results/final/AC/continuous/length_episode.png)
+![Image](/hand_in/results/final/AC/continuous/x.png)
 
-![Image](/hand_in/results/final/AC/continuous/rew_episode.png)
+![Image](/hand_in/results/final/AC/continuous/x.png)
 
 Actor-Critic (discrete)
 -------------
 
 python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600000 --frame_interval 10000 --n_environments 1 --algorithm "AC" --gamma 0.99 --hidden_size 512 --lr 0.0001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --grad_clipping 0
 
+![Image](/hand_in/results/final/AC/discrete/avg_frame_rewards.png)
 
-![Image](/hand_in/results/final/AC/discrete/avg_step_episode.png)
+![Image](/hand_in/results/final/AC/discrete/episode_lengths.png)
 
-![Image](/hand_in/results/final/AC/discrete/length_episode.png)
-
-![Image](/hand_in/results/final/AC/discrete/rew_episode.png)
+![Image](/hand_in/results/final/AC/discrete/episode_rewards.png)
 
 SAC:
 -------------
