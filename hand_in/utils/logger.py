@@ -66,8 +66,9 @@ class RLLogger:
             f"\nEpisode {self.episode_counter}: Reward = {reward =:.2f}, Length = {length:.2f}"
         )
 
-        print(f"Avg rew 50epi: {self.get_avg_reward_last_episodes(x_latest_episodes=50)}")
-
+        print(
+            f"Avg rew 50epi: {self.get_avg_reward_last_episodes(x_latest_episodes=50)}"
+        )
 
     def _write_to_file(self):
         log_data = {
@@ -84,23 +85,23 @@ class RLLogger:
             "wb",
         ) as outfile:
             pickle.dump(log_data, outfile)
-        #print(
+        # print(
         #    f"Saving log to file: {os.path.join(os.getcwd(), 'results', 'temporary', f'{self.run_name}.pickle')}"
-        #)
+        # )
 
     def plot_epi_rewards(self):
         plt.plot(self.episode_rewards)
         plt.xlabel("Episode")
         plt.ylabel("Reward")
         plt.title("Reward Progress")
-        plt.savefig(f'epi_rew_{self.run_name}.png')
+        plt.savefig(f"epi_rew_{self.run_name}.png")
         plt.show()
 
         plt.plot(self.episode_lengths)
         plt.xlabel("Episode")
         plt.ylabel("Length")
         plt.title("Length of episodes")
-        plt.savefig(f'epi_length_{self.run_name}.png')
+        plt.savefig(f"epi_length_{self.run_name}.png")
         plt.show()
 
     def plot_step_rewards(self):
@@ -133,11 +134,15 @@ class RLLogger:
             label="maximum avg. rew: {:.2f}".format(x_max),
         )
         plt.legend(loc="lower right")
-        plt.savefig(f'avg_step_rew_{self.run_name}.png')
+        plt.savefig(f"avg_step_rew_{self.run_name}.png")
         plt.show()
 
-    def get_avg_reward_last_episodes(self,x_latest_episodes:int=50):
-        return np.mean(self.episode_rewards[:self.episode_counter - 1][-x_latest_episodes:])
+    def get_avg_reward_last_episodes(self, x_latest_episodes: int = 50):
+        return np.mean(
+            self.episode_rewards[: self.episode_counter - 1][-x_latest_episodes:]
+        )
+
+
 def get_logger(argparser):
     logger = RLLogger(argparser)
     return logger

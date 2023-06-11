@@ -19,10 +19,11 @@ class ActorNetwork_disc(torch.nn.Module):
         self.output_dim = action_dim
         self.n_envs = argparser.args.n_env
         self.hidden_dim = argparser.args.hidden_size
-        self.checkpoint_file = os.path.join(os.getcwd(),'results/temporary',name+"_actor_d")
+        self.checkpoint_file = os.path.join(
+            os.getcwd(), "results/temporary", name + "_actor_d"
+        )
         self.lr = argparser.args.lr
         self.continuous = False
-
 
         # self.model = torch.nn.Sequential(
         #     torch.nn.Linear(self.input_dim, self.hidden_dim),
@@ -41,10 +42,9 @@ class ActorNetwork_disc(torch.nn.Module):
         # self.optimizer = torch.optim.Adam(list(self.model.parameters()) + list(self.action_layer.parameters()) + list(self.value_layer.parameters()), self.lr)
 
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        self.device = 'cpu'
+        self.device = "cpu"
         self.to(self.device)
         # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
-
 
     def forward(self, x):
 
@@ -56,11 +56,11 @@ class ActorNetwork_disc(torch.nn.Module):
         # x = self.model(torch.Tensor(x))
         action_values = self.action_layer(x)
         state_values = self.value_layer(x)
-        return (action_values,state_values)
+        return (action_values, state_values)
 
-    def get_action_and_log_prob(self,state):
+    def get_action_and_log_prob(self, state):
         action_values, state_values = self.forward(state)
-        action_probs = F.softmax(action_values,dim=2)
+        action_probs = F.softmax(action_values, dim=2)
         dist = Categorical(action_probs)
         action = dist.sample()
         entropy = dist.entropy()
@@ -68,7 +68,7 @@ class ActorNetwork_disc(torch.nn.Module):
         return action, log_probs, entropy, {}
 
     def save_model_checkpoint(self):
-        torch.save(self.state_dict(), self.checkpoint_file+'.pt')
+        torch.save(self.state_dict(), self.checkpoint_file + ".pt")
 
     def load_model_checkpoint(self):
-        self.load_state_dict(torch.load(self.checkpoint_file+'.pt'))
+        self.load_state_dict(torch.load(self.checkpoint_file + ".pt"))

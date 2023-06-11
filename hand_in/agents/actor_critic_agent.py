@@ -61,7 +61,7 @@ class ACAgent(BaseAgent):
         critic_value_[terminated_idx] = 0
 
         reward = torch.Tensor(rewards).view(-1) + self.parser.args.gamma * critic_value_
-        td_err = (reward - critic_value)
+        td_err = reward - critic_value
 
         # Calculate losses for actor and critic
         value_loss = td_err**2
@@ -83,12 +83,16 @@ class ACAgent(BaseAgent):
             action_loss = -(log_probs.view(-1) * td_err.clone().detach())
         # add entropy
         if self.parser.args.entropy:
-            action_loss += (0.5 * (entropy.squeeze(0)).sum())
+            action_loss += 0.5 * (entropy.squeeze(0)).sum()
         self.actor_network.optimizer.zero_grad()
         action_loss.backward()
         if self.parser.args.grad_clipping:
             torch.nn.utils.clip_grad_norm_(
-                [p for g in self.actor_network.optimizer.param_groups for p in g["params"]],
+                [
+                    p
+                    for g in self.actor_network.optimizer.param_groups
+                    for p in g["params"]
+                ],
                 self.parser.args.grad_clipping,
             )
         self.actor_network.optimizer.step()
@@ -97,8 +101,12 @@ class ACAgent(BaseAgent):
         if not isinstance(state, torch.Tensor):
             state = torch.Tensor([state]).to(self.actor_network.device)
 
-
-        action, log_probs, entropy, info_dict = self.actor_network.get_action_and_log_prob(state)
+        (
+            action,
+            log_probs,
+            entropy,
+            info_dict,
+        ) = self.actor_network.get_action_and_log_prob(state)
         if self.continuous:
             policy_response_dict = {
                 "log_probs": log_probs,
@@ -113,11 +121,17 @@ class ACAgent(BaseAgent):
     ):
         if self.continuous:
             return ActorNetwork_cont(
-                argparser=argparser, action_dim=action_dim, state_dim=state_dim, name="actor"
+                argparser=argparser,
+                action_dim=action_dim,
+                state_dim=state_dim,
+                name="actor",
             )
         else:
             return ActorNetwork_disc(
-                argparser=argparser, action_dim=action_dim, state_dim=state_dim, name="actor"
+                argparser=argparser,
+                action_dim=action_dim,
+                state_dim=state_dim,
+                name="actor",
             )
 
     def save_models(self):
@@ -127,7 +141,6 @@ class ACAgent(BaseAgent):
     def load_models(self):
         print("loading actor critic models:")
         self.actor_network.load_model_checkpoint()
-
 
     def uses_replay_buffer(self):
         """Replay buffer appears to hurt the stability of learning and is hence turned off"""

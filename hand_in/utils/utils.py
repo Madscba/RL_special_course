@@ -49,20 +49,27 @@ def get_agent(argparser, environments):
             action_type=action_type,
         )
     elif argparser.args.algorithm == "SAC_v0":
-        agent = SACAgent_v0(argparser=argparser,
-                            action_dim=action_dim,
-                            state_dim=state_dim,
-                            n_actions=n_actions,
-                            action_type=action_type,
+        agent = SACAgent_v0(
+            argparser=argparser,
+            action_dim=action_dim,
+            state_dim=state_dim,
+            n_actions=n_actions,
+            action_type=action_type,
         )
     else:
         raise Exception(f"{argparser.args.algorithm}-agent is currently not supported")
     return agent
 
 
-def evaluate_agent(agent, env_name, num_episodes=1, render=True,best_model:bool=False):
+def evaluate_agent(
+    agent, env_name, num_episodes=1, render=True, best_model: bool = False
+):
     env = gym.make(env_name)
-    env = RecordVideo(env, './results/temporary/video', episode_trigger=lambda episode_number: best_model)
+    env = RecordVideo(
+        env,
+        "./results/temporary/video",
+        episode_trigger=lambda episode_number: best_model,
+    )
 
     episode_rewards = []
 
@@ -75,7 +82,7 @@ def evaluate_agent(agent, env_name, num_episodes=1, render=True,best_model:bool=
             if render:
                 env.render()
 
-            action,_ = agent.follow_policy(observation.reshape(1,-1))
+            action, _ = agent.follow_policy(observation.reshape(1, -1))
             next_observation, reward, done, _ = env.step(action.squeeze())
 
             episode_reward += reward
@@ -93,7 +100,8 @@ def evaluate_agent(agent, env_name, num_episodes=1, render=True,best_model:bool=
     # plt.title('Agent Evaluation')
     # plt.show()
 
-def get_observed_next_state(new_state,info):
+
+def get_observed_next_state(new_state, info):
     """
     function that return the next observed state.
     This function is needed because in the case of termination, the returned value "new_state" from the environment will
@@ -101,7 +109,7 @@ def get_observed_next_state(new_state,info):
     dictionary, and should be extracted to have the proper next_observed state the agent can learn from.
     """
     if not len(info.keys()) == 0:
-        return info['final_observation'][0].reshape(1,-1)
+        return info["final_observation"][0].reshape(1, -1)
     else:
         return new_state
 

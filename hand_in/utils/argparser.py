@@ -72,7 +72,7 @@ class Parser:
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.0001, #0.00001
+            default=0.0001,  # 0.00001
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -87,12 +87,12 @@ class Parser:
         self.parser.add_argument(
             "--eps_decay",
             type=float,
-            default=0.001, #0.001
+            default=0.001,  # 0.001
         )
         self.parser.add_argument(
             "--min_eps",
             type=float,
-            default=0.05, #0.05
+            default=0.05,  # 0.05
         )
         self.parser.add_argument(
             "--batch_size",
@@ -123,7 +123,7 @@ class Parser:
         self.parser.add_argument(
             "--tau",
             type=float,
-            default=0.01, #0.005
+            default=0.01,  # 0.005
             help="exponential moving average constant",
         )
         self.parser.add_argument(

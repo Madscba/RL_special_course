@@ -19,7 +19,15 @@ from hand_in.utils.replay_buffer import ReplayBuffer
 
 
 class SACAgent_v0(BaseAgent):
-    def __init__(self, argparser, action_dim, state_dim, n_actions, action_type, reward_scale: float = 2):
+    def __init__(
+        self,
+        argparser,
+        action_dim,
+        state_dim,
+        n_actions,
+        action_type,
+        reward_scale: float = 2,
+    ):
         self.parser = argparser
         self.continuous = action_type == "continuous"
         self.action_dim = action_dim
@@ -34,7 +42,7 @@ class SACAgent_v0(BaseAgent):
             output_dim=1,
             n_actions=n_actions,
             action_type=action_type,
-            name="value"
+            name="value",
         )
         self.value_target = CriticNetwork(
             argparser=argparser,
@@ -42,7 +50,7 @@ class SACAgent_v0(BaseAgent):
             output_dim=1,
             n_actions=n_actions,
             action_type=action_type,
-            name="value_target"
+            name="value_target",
         )
         self.critic_primary = CriticNetwork(
             argparser=argparser,
@@ -50,7 +58,7 @@ class SACAgent_v0(BaseAgent):
             output_dim=1,
             n_actions=n_actions,
             action_type=action_type,
-            name="critic_primary"
+            name="critic_primary",
         )
         self.critic_secondary = CriticNetwork(
             argparser=argparser,
@@ -58,12 +66,15 @@ class SACAgent_v0(BaseAgent):
             output_dim=1,
             n_actions=n_actions,
             action_type=action_type,
-            name="critic_secondary"
+            name="critic_secondary",
         )
         self.update_value_target(tau=1)
 
         self.actor_network = SACActorNetwork(
-            argparser=argparser, action_dim=action_dim, state_dim=state_dim, name="actor"
+            argparser=argparser,
+            action_dim=action_dim,
+            state_dim=state_dim,
+            name="actor",
         )
 
         self.replay_buffer = ReplayBuffer(
@@ -72,37 +83,47 @@ class SACAgent_v0(BaseAgent):
             action_dim=action_dim,
             n_actions=n_actions,
             used_for_policy_gradient_method=True,
-            batch_size=argparser.args.batch_size
+            batch_size=argparser.args.batch_size,
         )
 
     def update_policy(
-            self,
-            states,
-            actions,
-            rewards,
-            new_states,
-            terminated,
-            policy_response_dict: dict,
+        self,
+        states,
+        actions,
+        rewards,
+        new_states,
+        terminated,
+        policy_response_dict: dict,
     ):
 
         if self.replay_buffer.event_idx < self.replay_buffer.batch_size:
-            print("nothing happened yet as we have to little exp") if self.replay_buffer.event_idx % 20 == 0 else ""
+            print(
+                "nothing happened yet as we have to little exp"
+            ) if self.replay_buffer.event_idx % 20 == 0 else ""
             return
 
         event_tuples = self.replay_buffer.get_batch_of_events()
-        state, action, reward, state_, terminated = self.event_tuple_to_tensors(event_tuples)
+        state, action, reward, state_, terminated = self.event_tuple_to_tensors(
+            event_tuples
+        )
         input_to_critic_networks = torch.cat([state.T, action.T], dim=1)
 
         self.update_value_network(input_to_critic_networks, state)
 
         self.update_actor_network(state)
 
-        self.update_critic_networks(input_to_critic_networks, reward, state_, terminated)
+        self.update_critic_networks(
+            input_to_critic_networks, reward, state_, terminated
+        )
 
         self.update_value_target()
 
-    def update_critic_networks(self, input_to_critic_networks, reward, state_, terminated):
-        critic_losses = self.get_critic_losses(input_to_critic_networks, reward, state_, terminated)
+    def update_critic_networks(
+        self, input_to_critic_networks, reward, state_, terminated
+    ):
+        critic_losses = self.get_critic_losses(
+            input_to_critic_networks, reward, state_, terminated
+        )
         self.critic_primary.optimizer.zero_grad()
         self.critic_secondary.optimizer.zero_grad()
         critic_losses.backward()
@@ -130,7 +151,9 @@ class SACAgent_v0(BaseAgent):
         # self.actor_network.lr_scheduler.step()
 
     def get_actor_loss(self, state):
-        actions, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=True)
+        actions, log_probs, _ = self.actor_network.sample_normal(
+            state.T, reparameterize=True
+        )
         log_probs = log_probs.view(-1)
         inp_ = torch.cat([state.T, actions], dim=1)
         q1_new_policy = self.critic_primary.forward(inp_)
@@ -149,7 +172,9 @@ class SACAgent_v0(BaseAgent):
 
     def get_value_loss(self, input_to_critic_networks, state):
         value = self.value(state.T).view(-1)
-        _, log_probs, _ = self.actor_network.sample_normal(state.T, reparameterize=False)
+        _, log_probs, _ = self.actor_network.sample_normal(
+            state.T, reparameterize=False
+        )
         log_probs = log_probs.view(-1)
         q1_new_policy = self.critic_primary.forward(input_to_critic_networks)
         q2_new_policy = self.critic_secondary.forward(input_to_critic_networks)
@@ -161,50 +186,56 @@ class SACAgent_v0(BaseAgent):
 
     def event_tuple_to_tensors(self, event_tuples):
         states, actions, rewards, new_states, terminated = (
-            event_tuples[:self.state_dim, :],  # states
+            event_tuples[: self.state_dim, :],  # states
             event_tuples[
-            self.state_dim: self.state_dim + self.replay_buffer.n_actions, :
+                self.state_dim : self.state_dim + self.replay_buffer.n_actions, :
             ],  # actions
             event_tuples[
-            self.state_dim
-            + self.replay_buffer.n_actions: self.state_dim
-                                            + self.replay_buffer.n_actions
-                                            + 1,
-            :,
+                self.state_dim
+                + self.replay_buffer.n_actions : self.state_dim
+                + self.replay_buffer.n_actions
+                + 1,
+                :,
             ],  # reward
             event_tuples[
-            self.state_dim
-            + self.replay_buffer.n_actions
-            + 1: 2 * self.state_dim
-                 + self.replay_buffer.n_actions
-                 + 1,
-            :,
+                self.state_dim
+                + self.replay_buffer.n_actions
+                + 1 : 2 * self.state_dim
+                + self.replay_buffer.n_actions
+                + 1,
+                :,
             ],  # next state
             event_tuples[
-            2 * self.state_dim + self.replay_buffer.n_actions + 1, :
+                2 * self.state_dim + self.replay_buffer.n_actions + 1, :
             ],  # terminated
         )
-        states, actions, rewards, new_states, terminated = states.to(self.actor_network.device), actions.to(
-            self.actor_network.device), rewards.to(self.actor_network.device), new_states.to(
-            self.actor_network.device), terminated.to(self.actor_network.device)
+        states, actions, rewards, new_states, terminated = (
+            states.to(self.actor_network.device),
+            actions.to(self.actor_network.device),
+            rewards.to(self.actor_network.device),
+            new_states.to(self.actor_network.device),
+            terminated.to(self.actor_network.device),
+        )
         return states, actions, rewards, new_states, terminated
 
     def follow_policy(self, state, reparameterize=False):
         if not isinstance(state, torch.Tensor):
             state = torch.Tensor([state]).to(self.actor_network.device)
 
-        actions, log_probs, entropy = self.actor_network.sample_normal(state, reparameterize=False)
+        actions, log_probs, entropy = self.actor_network.sample_normal(
+            state, reparameterize=False
+        )
 
         policy_response_dict = {
             "log_probs": log_probs,
             "entropy": entropy,
         }
-        if actions.shape[0] == self.replay_buffer.batch_size:  # returning batched actions in correct format
+        if (
+            actions.shape[0] == self.replay_buffer.batch_size
+        ):  # returning batched actions in correct format
             return actions.cpu().detach().numpy(), policy_response_dict
         else:
             return actions.cpu().detach().numpy()[0], policy_response_dict
-
-
 
     def update_value_target(self, tau=1):
         target_value_params = self.value_target.named_parameters()
@@ -214,8 +245,10 @@ class SACAgent_v0(BaseAgent):
         value_state_dict = dict(value_params)
 
         for name in value_state_dict:
-            value_state_dict[name] = tau * value_state_dict[name].clone() + \
-                                     (1 - tau) * target_value_state_dict[name].clone()
+            value_state_dict[name] = (
+                tau * value_state_dict[name].clone()
+                + (1 - tau) * target_value_state_dict[name].clone()
+            )
 
         self.value_target.load_state_dict(value_state_dict)
 
