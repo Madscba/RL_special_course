@@ -23,7 +23,6 @@ class CriticNetwork(torch.nn.Module):
         )
         self.optimizer = torch.optim.Adam(self.parameters(), lr=argparser.args.lr)
         self.criterion = torch.nn.MSELoss()  # MSELoss()
-
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = "cpu"
         self.to(self.device)

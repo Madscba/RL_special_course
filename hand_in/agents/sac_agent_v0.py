@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 from hand_in.agents.base_agent import BaseAgent
-from hand_in.models.actor_continuous import ActorNetwork_cont
+from hand_in.models.actor_critic_continuous import ActorNetwork_cont
 from hand_in.models.actor_discrete import ActorNetwork_disc
 from hand_in.models.SACactor import SACActorNetwork
 from hand_in.models.critic_model import CriticNetwork

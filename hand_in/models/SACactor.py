@@ -23,10 +23,7 @@ class SACActorNetwork(torch.nn.Module):
         self.fc2 = torch.nn.Linear(self.hidden_dim, self.hidden_dim)
         self.mu = torch.nn.Linear(self.hidden_dim, self.output_dim)
         self.sigma = torch.nn.Linear(self.hidden_dim, self.output_dim)
-
         self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
-        # self.lr_scheduler = ExponentialLR(self.optimizer, gamma= 0.999986) #quarter learning rate after 100.000 steps
-
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = "cpu"
         self.to(self.device)
@@ -39,14 +36,11 @@ class SACActorNetwork(torch.nn.Module):
 
         mu = self.mu(prob)
         sigma = self.sigma(prob)
-
         sigma = torch.clamp(sigma, min=self.reparam_noise, max=1)
-
         return mu, sigma
 
     def sample_normal(self, state, reparameterize=True):
         mu, sigma = self.forward(state)
-        # print( mu, sigma)
         dist = Normal(mu, sigma)
 
         if reparameterize:

@@ -38,13 +38,9 @@ class ActorNetwork_disc(torch.nn.Module):
         self.action_layer = torch.nn.Linear(self.hidden_dim, self.output_dim)
         self.value_layer = torch.nn.Linear(self.hidden_dim, 1)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-
-        # self.optimizer = torch.optim.Adam(list(self.model.parameters()) + list(self.action_layer.parameters()) + list(self.value_layer.parameters()), self.lr)
-
         # self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         self.device = "cpu"
         self.to(self.device)
-        # self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99)
 
     def forward(self, x):
 
