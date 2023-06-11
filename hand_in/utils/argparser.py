@@ -12,7 +12,7 @@ class Parser:
 
         # Environment config         # "CartPole-v1", "LunarLander-v2", "LunarLanderContinuous-v2"
         self.parser.add_argument(
-            "--env_name", type=str, default="LunarLander-v2"
+            "--env_name", type=str, default="LunarLanderContinuous-v2"
         )
 
         # Logger config
@@ -36,7 +36,7 @@ class Parser:
         self.parser.add_argument(
             "--n_steps",
             type=int,
-            default=400000,
+            default=200000,
             metavar="N",
             help="number of steps (default: 100000)",
         )
@@ -65,14 +65,14 @@ class Parser:
         self.parser.add_argument(
             "--hidden_size",
             type=int,
-            default=256,
+            default=512,
             metavar="N",
             help="number of hidden units (default: 32)",
         )
         self.parser.add_argument(
             "--lr",
             type=float,
-            default=0.001, #0.00001
+            default=0.0001,  # 0.00001
             metavar="N",
             help="learning rate (default: 0.001)",
         )
@@ -87,12 +87,12 @@ class Parser:
         self.parser.add_argument(
             "--eps_decay",
             type=float,
-            default=0.001, #0.001
+            default=0.001,  # 0.001
         )
         self.parser.add_argument(
             "--min_eps",
             type=float,
-            default=0.05, #0.05
+            default=0.05,  # 0.05
         )
         self.parser.add_argument(
             "--batch_size",
@@ -123,7 +123,7 @@ class Parser:
         self.parser.add_argument(
             "--tau",
             type=float,
-            default=0.01, #0.005
+            default=0.01,  # 0.005
             help="exponential moving average constant",
         )
         self.parser.add_argument(

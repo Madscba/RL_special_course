@@ -19,7 +19,7 @@ class ReplayBuffer:
         n_actions: int = 2,
         batch_size: int = 64,
         used_for_policy_gradient_method: bool = False,
-        store_on_GPU_w_grad: bool = False
+        store_on_GPU_w_grad: bool = False,
     ):
         self.capacity = int(capacity)
         self.event_idx = 0
@@ -41,8 +41,10 @@ class ReplayBuffer:
     def save_event(
         self, state, action, reward, next_state, terminated, policy_response_dict, info
     ):
-        if not len(info.keys())==0: #If environment terminates, then new_state will be the state of the reset environment
-            next_state = info['final_observation'][0].reshape(1,-1)
+        if (
+            not len(info.keys()) == 0
+        ):  # If environment terminates, then new_state will be the state of the reset environment
+            next_state = info["final_observation"][0].reshape(1, -1)
 
         if self.used_for_policy_gradient_method:
             if not self.store_on_GPU_w_grad:
@@ -53,8 +55,14 @@ class ReplayBuffer:
                         torch.from_numpy(reward.reshape(-1, 1)).cpu(),
                         torch.from_numpy(next_state).cpu(),
                         torch.from_numpy(terminated.reshape(-1, 1)).cpu(),
-                        policy_response_dict["log_probs"].reshape(-1, self.n_actions).detach().cpu(),
-                        policy_response_dict["entropy"].reshape(-1, self.n_actions).detach().cpu(),
+                        policy_response_dict["log_probs"]
+                        .reshape(-1, self.n_actions)
+                        .detach()
+                        .cpu(),
+                        policy_response_dict["entropy"]
+                        .reshape(-1, self.n_actions)
+                        .detach()
+                        .cpu(),
                     )
                 )
             else:
@@ -66,7 +74,9 @@ class ReplayBuffer:
                         torch.from_numpy(next_state),
                         torch.from_numpy(terminated.reshape(-1, 1)),
                         policy_response_dict["log_probs"].reshape(-1, self.n_actions),
-                        policy_response_dict["entropy"].reshape(-1, self.n_actions).detach(),
+                        policy_response_dict["entropy"]
+                        .reshape(-1, self.n_actions)
+                        .detach(),
                     )
                 )
         else:
