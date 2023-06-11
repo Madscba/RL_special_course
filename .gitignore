@@ -1,13 +1,15 @@
 *.pickle
-*.png
+/hand_in/*.png
 *.pyc
 *.mp4
 *.json
 *.pt
 
 ./*.pickle
-./*.png
+hand_in/results/temporary/*.jpn
 ./*.pyc
 ./*.mp4
 ./*.json
 ./*.pt
+
+!hand_in/results/final/*.jpn

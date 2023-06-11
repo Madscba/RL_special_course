@@ -19,6 +19,7 @@ $full_path = Join-Path -Path $repo_path -ChildPath $file_path
 echo $full_path
 
 & $python_executable1 $full_path --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "REINFORCE" --gamma 0.99 --hidden_size 256 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05 --use_replay 0
+& $python_executable1 $full_path --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "REINFORCE" --gamma 0.99 --hidden_size 256 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05 --use_replay 0
 
 
 # Check the exit code of the Python script

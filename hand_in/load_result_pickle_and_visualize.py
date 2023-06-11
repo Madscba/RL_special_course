@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-file_name = r'results\final\REINFORCE\seed3__env_Lunar__log_defau__fram10000__visu0__n_st40000__n_en1__algoREINF__gamm0.99__hidd256__lr0.001__eps1.0__eps_0.000__min_0.05__batc128__use_0__grad0__entr0__alph1__tau0.01__rewa2.0.pickle'
+file_name = r'results\final\AC\continuous\seed3__env_Lunar__log_defau__fram10000__visu0__n_st60000__n_en1__algoAC__gamm0.99__hidd512__lr0.000__eps1.0__eps_0.001__min_0.05__batc128__use_1__grad0.0__entr0__alph1__tau0.01__rewa2.0.pickle'
 file_path = os.path.join(os.getcwd(),file_name)
+
+# file_path = r'C:\Users\Mads-\Downloads\seed3__env_Lunar__log_defau__fram10000__visu0__n_st60000__n_en1__algoAC__gamm0.99__hidd512__lr0.000__eps1__eps_0.001__min_0.05__batc128__use_1__grad0__entr0__alph1__tau0.01__rewa2.0_v1.pickle'
 # Load pickle file
 with open(file_path, 'rb') as f:
     log_data = pickle.load(f)
