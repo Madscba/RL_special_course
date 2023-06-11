@@ -40,7 +40,6 @@ class ReinforceAgent(BaseAgent):
                 self.actor_network.input_dim + self.n_actions, :
             ]
             log_prob_idx = 2 * self.actor_network.input_dim + self.n_actions + 2
-            # ('state','action','reward',next_state','terminated', log_probs, entropy)
             rel_log_probs = rel_episode_hist[
                 log_prob_idx : log_prob_idx + self.n_actions, :
             ].squeeze(0)
@@ -57,19 +56,16 @@ class ReinforceAgent(BaseAgent):
             r_mean = discounted_rewards.mean()
             r_std = discounted_rewards.std()
             normalized_rewards = (discounted_rewards - r_mean) / r_std
-            # for t in reversed(range(episode_history.shape[1])):
-            #     G = self.parser.args.gamma * G + rel_rewards[t]
-            #     loss = loss - (rel_log_probs[:, t] * G).sum()
+
 
             if self.continuous:
                 rel_log_probs = rel_log_probs.sum(dim=0)
-            # loss = Variable(torch.Tensor([0]), requires_grad=True)  # reset loss to zero
-            loss = 0  # reset loss to zero
+            loss = 0
             for (rew, log_prob) in zip(normalized_rewards, rel_log_probs):
                 loss += -rew * log_prob
 
             self.actor_network.optimizer.zero_grad()
-            loss.backward()  # set retain_graph to True
+            loss.backward()
             if self.parser.args.grad_clipping:
                 torch.nn.utils.clip_grad_norm_(
                     [

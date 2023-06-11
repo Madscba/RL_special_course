@@ -42,17 +42,11 @@ class ACAgent(BaseAgent):
         terminated,
         policy_response_dict: dict,
     ):
-        # (states,actions,rewards,new_states,terminated,log_probs,entropy,) = step_info
         log_probs, entropy = (
             policy_response_dict["log_probs"],
             policy_response_dict["entropy"],
         )
-        # dist = policy_response_dict['dist']
-        # entropy = policy_response_dict["entropy"]
-        # log_probs = dist.log_prob(torch.Tensor(actions))
-
         # Calculate reward and critic estimate
-
         critic_value = self.critic_network.forward(torch.Tensor(states))
         critic_value = critic_value.view(-1)
         critic_value_ = self.critic_network.forward(torch.Tensor(new_states))
@@ -63,29 +57,27 @@ class ACAgent(BaseAgent):
         reward = torch.Tensor(rewards).view(-1) + self.parser.args.gamma * critic_value_
         td_err = reward - critic_value
 
-        # Calculate losses for actor and critic
+        # Calculate losses for critic
         value_loss = td_err**2
-        # Update networks
-        # losses = value_loss + action_loss
-        # losses.backward()
         self.critic_network.optimizer.zero_grad()
         value_loss.backward()
-        # if self.parser.args.grad_clipping:
-        #     torch.nn.utils.clip_grad_norm_(
-        #         [p for g in self.critic_network.optimizer.param_groups for p in g["params"]],
-        #         self.parser.args.grad_clipping,
-        #     )
+
+        # Do gradient clipping
+        if self.parser.args.grad_clipping:
+            torch.nn.utils.clip_grad_norm_(
+                [p for g in self.critic_network.optimizer.param_groups for p in g["params"]],
+                self.parser.args.grad_clipping,
+            )
         self.critic_network.optimizer.step()
 
+        # Calculate loss for actor
         if self.continuous:
             action_loss = -(log_probs.sum(2).view(-1) * td_err.clone().detach())
         else:
             action_loss = -(log_probs.view(-1) * td_err.clone().detach())
-        # add entropy
-        if self.parser.args.entropy:
-            action_loss += 0.5 * (entropy.squeeze(0)).sum()
         self.actor_network.optimizer.zero_grad()
         action_loss.backward()
+        # Do gradient clipping
         if self.parser.args.grad_clipping:
             torch.nn.utils.clip_grad_norm_(
                 [

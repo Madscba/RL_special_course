@@ -13,7 +13,7 @@ def get_environment_info(envs):
     state_dim = envs.single_observation_space.shape[0]
     print("See that state_dim, action_dim, n_action and disc/cont is correctly set")
     try:  # discrete
-        n_actions = envs.action_space.shape[0]  # env.observation_space.shape
+        n_actions = envs.action_space.shape[0]
         action_dim = envs.single_action_space.n
         action_type = "discrete"
     except AttributeError:  # continuous

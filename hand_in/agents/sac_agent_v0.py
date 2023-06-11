@@ -1,4 +1,4 @@
-# A class implementing a soft actor critic agent.
+# A class implementing a soft actor critic agent https://arxiv.org/abs/1801.01290
 import copy
 import numpy as np
 import torch
@@ -9,14 +9,6 @@ from hand_in.models.actor_discrete import ActorNetwork_disc
 from hand_in.models.SACactor import SACActorNetwork
 from hand_in.models.critic_model import CriticNetwork
 from hand_in.utils.replay_buffer import ReplayBuffer
-
-
-# https://www.youtube.com/watch?v=_nFXOZpo50U
-# https://www.youtube.com/watch?v=U20F-MvThjM&t=0s
-# https://www.youtube.com/watch?v=ioidsRlf79o
-
-# https://arxiv.org/pdf/1812.05905.pdf
-
 
 class SACAgent_v0(BaseAgent):
     def __init__(
@@ -148,7 +140,6 @@ class SACAgent_v0(BaseAgent):
         self.actor_network.optimizer.zero_grad()
         actor_loss.backward(retain_graph=True)
         self.actor_network.optimizer.step()
-        # self.actor_network.lr_scheduler.step()
 
     def get_actor_loss(self, state):
         actions, log_probs, _ = self.actor_network.sample_normal(
