@@ -24,7 +24,7 @@ To train an agent the main.py is used. Hyperparameters are set in the file utils
 DDQN:
 -------------
 
-python main.py --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "DDQN" --gamma 0.99 --hidden_size 64 --lr 0.001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --batch_size 32 --use_replay 1
+python main.py --env_name "LunarLander-v2" --visualize 1 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "DDQN" --gamma 0.99 --hidden_size 64 --lr 0.001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --batch_size 32 --use_replay 1
 
 
 ![Image](/hand_in/results/final/DDQN/avg_frame_rewards.png)
@@ -37,7 +37,7 @@ python main.py --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --fram
 REINFORCE (discrete):
 -------------
 
-python main.py --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "REINFORCE" --gamma 0.99 --hidden_size 256 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05 --use_replay 0
+python main.py --env_name "LunarLander-v2" --visualize 1 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "REINFORCE" --gamma 0.99 --hidden_size 256 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05 --use_replay 0
 
 
 
@@ -50,7 +50,7 @@ python main.py --env_name "LunarLander-v2" --visualize 0 --n_steps 400000 --fram
 REINFORCE (continuous):
 -------------
 
-python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "REINFORCE" --gamma 0.99 --hidden_size 256 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05 --use_replay 0
+python main.py --env_name "LunarLanderContinuous-v2" --visualize 1 --n_steps 400000 --frame_interval 10000 --n_env 1 --algorithm "REINFORCE" --gamma 0.99 --hidden_size 256 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05 --use_replay 0
 
 
 
@@ -63,7 +63,7 @@ python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 400
 Actor-Critic (continuous)
 -------------
 
-python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600000 --frame_interval 10000 --n_environments 1 --algorithm "AC" --gamma 0.99 --hidden_size 512 --lr 0.0001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --grad_clipping 0
+python main.py --env_name "LunarLanderContinuous-v2" --visualize 1 --n_steps 600000 --frame_interval 10000 --n_env 1 --algorithm "AC" --gamma 0.99 --hidden_size 512 --lr 0.0001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --grad_clipping 0
 
 
 ![Image](/hand_in/results/final/AC/continuous/avg_frame_rewards.png)
@@ -75,7 +75,7 @@ python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600
 Actor-Critic (discrete)
 -------------
 
-python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600000 --frame_interval 10000 --n_environments 1 --algorithm "AC" --gamma 0.99 --hidden_size 512 --lr 0.0001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --grad_clipping 0
+python main.py --env_name "LunarLanderContinuous-v2" --visualize 1 --n_steps 600000 --frame_interval 10000 --n_env 1 --algorithm "AC" --gamma 0.99 --hidden_size 512 --lr 0.0001 --eps 1 --eps_decay 0.001 --min_eps 0.05 --grad_clipping 0
 
 ![Image](/hand_in/results/final/AC/discrete/avg_frame_rewards.png)
 
@@ -85,7 +85,7 @@ python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600
 
 SAC:
 -------------
-python main.py --seed 3 --env_name LunarLanderContinuous-v2 --log_format "default" --frame_interval 10000 --visualize 0 --n_steps 600000 --n_env 1 --algorithm SAC_v0 --gamma 0.99 --hidden_size 256 --lr 0.0003 --batch_size 256 --grad_clipping 0 --tau 0.005 --reward_scale 2.0
+python main.py --seed 3 --env_name LunarLanderContinuous-v2 --log_format "default" --frame_interval 10000 --visualize 1 --n_steps 600000 --n_env 1 --algorithm SAC_v0 --gamma 0.99 --hidden_size 256 --lr 0.0003 --batch_size 256 --grad_clipping 0 --tau 0.005 --reward_scale 2.0
 
 
 ![Image](/hand_in/results/final/SAC/avg_frame_rewards.png)
