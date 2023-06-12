@@ -1,8 +1,8 @@
 Introduction
 --------
 This repository hold implementations of the following reinforcement learning methods: Double Deep Q-Learning (DDQN), Reinforce, Actor-Critic (AC), Soft Actor-Critic (SAC, first version, https://arxiv.org/abs/1801.01290).
-Below is instructions for how to set up an environment that can run the code accompanied by instructions on how to configure each method allow with results. In the end a description of the codebase structure can be found.
-The DDQN method only function with the discrete action space (Lunarlander-v2 environment), and SAC only in the continuous action space (LunarlanderContinuous-v2 environment). Both Reinforce and AC work in both. For each method a grid search of different parameters has been done, and once found to work reasonably the grid search was stopped. This means that the methods might not be directly comparably as the best hyperparameters are not guaranteed to be similar to the ones I have used and reported.
+Below is instructions for how to set up a virtual environment that can run the code accompanied by instructions on how to configure each method followed with results from the training. In the end a description of the codebase structure can be found. The methods have been tuned to play the GymAI environment LunarLander either with discrete or continuous action space.
+The DDQN method only function with the discrete action space (Lunarlander-v2 environment), and SAC only in the continuous action space (LunarlanderContinuous-v2 environment). Both Reinforce and AC work in both. For each method a grid search of different parameters has been done, and once a set of parameters was found to work reasonably no further extensive search was performed. This means that the methods might not be directly comparably as the best hyperparameters are not guaranteed to be similar to the ones I have used and reported.
 
 Instructions on how to run the code
 ---

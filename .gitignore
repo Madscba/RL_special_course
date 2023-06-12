@@ -3,8 +3,8 @@
 *.mp4
 *.json
 *.pt
-*.pickle
 
+/hand_in/results/temporary/*
 /hand_in/results/temporary/*.jpn
 hand_in/results/temporary/*.pickle
 /hand_in/results/temporary/*.pickle
@@ -14,5 +14,5 @@ hand_in/results/temporary/*.pickle
 ./*.pt
 
 !hand_in/results/final/*.jpn
-#!hand_in/results/final/*.pickle
+!hand_in/results/final/*.pickle
 
