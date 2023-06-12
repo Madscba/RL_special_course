@@ -17,8 +17,7 @@ conda env create --name rl_venv --file environment.yml
 ```
 main.py
 -
-To train an agent the main.py is used. Using the configuration in the utils/argparser.py. Running the code using the terminal with the following arguments, you can train a particular agent and results showing the training progress will be visualized.
-For convenience, the results are also included in /results/final/<method>
+To train an agent the main.py is used. Hyperparameters are set in the file utils/argparser.py or as a flag if main.py is run from the terminal. For each method a command for running the algorithm is provided. You can train a particular agent using these commands and results showing the training progress will be visualized. For convenience, the results using these commands are also included in /results/final/<method>. For each method 3 graphs are included. The first plot "Reward Progres" with steps as the x-axis show the average reward pr. step. The average is taken over non-overlapping sequences of 10.000 steps. The second plot shows length (frames/steps) for each episode that the agents has played. The last plot shows the total reward per episode the agents has received for each played episode. Training each episode takes between 20 minutes and 5 hours using a CPU (AMD Ryzen 9 5900X 12-Core Processor, 3701 Mhz, 12 Core(s), 24 Logical Processor(s))
 
 
 
@@ -86,15 +85,14 @@ python main.py --env_name "LunarLanderContinuous-v2" --visualize 0 --n_steps 600
 
 SAC:
 -------------
+python main.py --seed 3 --env_name LunarLanderContinuous-v2 --log_format "default" --frame_interval 10000 --visualize 0 --n_steps 600000 --n_env 1 --algorithm SAC_v0 --gamma 0.99 --hidden_size 256 --lr 0.0003 --batch_size 256 --grad_clipping 0 --tau 0.005 --reward_scale 2.0
 
-python main.py --env_name "LunarLanderContinuous-v2" --visualize False --n_steps 200000 --frame_interval 10000 --n_environments 1 --algorithm "REINFORCE" --gamma 0.95 --hidden_size 32 --lr 0.001 --eps 1 --eps_decay 0.0001 --min_eps 0.05
 
+![Image](/hand_in/results/final/SAC/avg_frame_rewards.png)
 
-![Image](/hand_in/results/final/SAC/avg_step_episode.png)
+![Image](/hand_in/results/final/SAC/episode_lengths.png)
 
-![Image](/hand_in/results/final/SAC/length_episode.png)
-
-![Image](/hand_in/results/final/SAC/rew_episode.png)
+![Image](/hand_in/results/final/SAC/episode_rewards.png)
 
 
 
